@@ -1,0 +1,51 @@
+{
+  "name": "recordful-mcp",
+  "version": "0.1.0",
+  "description": "MCP server that lets AI agents drive the Recordful browser extension's recorder.",
+  "private": true,
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iKislay/recordful-mcp.git"
+  },
+  "homepage": "https://github.com/iKislay/recordful-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/iKislay/recordful-mcp/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "recordful",
+    "screen-recording",
+    "ai-agents"
+  ],
+  "bin": {
+    "recordful-mcp": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20.10"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx src/cli.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run typecheck && npm test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "ws": "^8.22.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/ws": "^8.18.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}
