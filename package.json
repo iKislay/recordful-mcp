@@ -2,7 +2,8 @@
   "name": "recordful-mcp",
   "version": "0.3.0",
   "description": "Let any AI app record product demos with Recordful: an MCP server that drives the Recordful Chrome extension.",
-  "private": true,
+  "license": "MIT",
+  "author": "Kislay (https://recordful.app)",
   "type": "module",
   "repository": {
     "type": "git",
@@ -30,7 +31,8 @@
     "dist",
     "README.md",
     "CHANGELOG.md",
-    "SECURITY.md"
+    "SECURITY.md",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=20.10"

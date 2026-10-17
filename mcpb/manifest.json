@@ -22,29 +22,87 @@
     "entry_point": "dist/cli.js",
     "mcp_config": {
       "command": "node",
-      "args": ["${__dirname}/dist/cli.js"]
+      "args": [
+        "${__dirname}/dist/cli.js"
+      ]
     }
   },
   "tools": [
-    { "name": "get_status", "description": "Connection, recorder state, recording mode and the tab handed over" },
-    { "name": "start_recording", "description": "Start recording with the user's Recordful settings" },
-    { "name": "pause_recording", "description": "Pause, so thinking time stays out of the video" },
-    { "name": "resume_recording", "description": "Resume a paused recording" },
-    { "name": "stop_recording", "description": "Stop; Recordful's editor opens with the video" },
-    { "name": "navigate", "description": "Open a URL in the handed-over tab" },
-    { "name": "snapshot", "description": "List the page's interactive elements with refs" },
-    { "name": "click", "description": "Click an element with a visible, smooth cursor" },
-    { "name": "type", "description": "Type into a field at a human pace" },
-    { "name": "press", "description": "Press a key, such as Enter or Tab" },
-    { "name": "scroll", "description": "Scroll smoothly to an element or by an amount" },
-    { "name": "wait_for", "description": "Wait for text or an element to appear or go away" },
-    { "name": "screenshot", "description": "See what the tab shows right now" },
-    { "name": "probe_capture", "description": "Diagnose capture permissions" }
+    {
+      "name": "get_status",
+      "description": "Connection, recorder state, recording mode and the tab handed over"
+    },
+    {
+      "name": "start_recording",
+      "description": "Start recording with the user's Recordful settings"
+    },
+    {
+      "name": "pause_recording",
+      "description": "Pause, so thinking time stays out of the video"
+    },
+    {
+      "name": "resume_recording",
+      "description": "Resume a paused recording"
+    },
+    {
+      "name": "stop_recording",
+      "description": "Stop; Recordful's editor opens with the video"
+    },
+    {
+      "name": "navigate",
+      "description": "Open a URL in the handed-over tab"
+    },
+    {
+      "name": "snapshot",
+      "description": "List the page's interactive elements with refs"
+    },
+    {
+      "name": "click",
+      "description": "Click an element with a visible, smooth cursor"
+    },
+    {
+      "name": "type",
+      "description": "Type into a field at a human pace"
+    },
+    {
+      "name": "press",
+      "description": "Press a key, such as Enter or Tab"
+    },
+    {
+      "name": "scroll",
+      "description": "Scroll smoothly to an element or by an amount"
+    },
+    {
+      "name": "wait_for",
+      "description": "Wait for text or an element to appear or go away"
+    },
+    {
+      "name": "screenshot",
+      "description": "See what the tab shows right now"
+    },
+    {
+      "name": "probe_capture",
+      "description": "Diagnose capture permissions"
+    }
   ],
   "prompts_generated": true,
-  "keywords": ["recordful", "screen recording", "product demo", "video", "chrome", "browser"],
+  "keywords": [
+    "recordful",
+    "screen recording",
+    "product demo",
+    "video",
+    "chrome",
+    "browser"
+  ],
+  "license": "MIT",
   "compatibility": {
-    "platforms": ["darwin", "win32", "linux"],
-    "runtimes": { "node": ">=20.10.0" }
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ],
+    "runtimes": {
+      "node": ">=20.10.0"
+    }
   }
 }

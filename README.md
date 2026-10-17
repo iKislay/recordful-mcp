@@ -313,3 +313,7 @@ docs/               protocol, findings, roadmap, hosted MCP plan
 ```
 
 The extension side lives in the Recordful repo under `src/pages/Background/agentBridge/` (connection, pairing, commands), `src/pages/Content/agentPage/` (page tools) and `src/pages/Agents/` (the AI agents page and the pairing window).
+
+## License
+
+[MIT](LICENSE)
