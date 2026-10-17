@@ -16,7 +16,10 @@
 // --port runs the bridge on another port and points the extension at it, for
 // when an MCP client's bridge already holds the default one.
 //
-// Needs `npm run build` here, `npm run build:agent` in the recordful repo, and
+// Needs `npm run build` here; a recordful development build made with
+// RECORDFUL_AGENT_BRIDGE_TOKEN=<secret> (`npm run build:agent`), and the same
+// secret in RECORDFUL_BRIDGE_TOKEN here, so the run needs no pairing window
+// (scripts/live-pairing.mjs tests that); and
 // Playwright from the recordful repo (already a devDependency there). Branded
 // Chrome ignores --load-extension since v137, so use Playwright's Chromium or
 // --channel msedge.
@@ -27,7 +30,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { loadOrCreateToken } from "../dist/auth/token.js";
+import { PairingStore } from "../dist/auth/pairings.js";
 import { BridgeServer } from "../dist/bridge/BridgeServer.js";
 import { loadConfig } from "../dist/config.js";
 import { createLogger } from "../dist/logger.js";
@@ -82,12 +85,21 @@ const call = async (bridge, method, params = {}, timeoutMs = 20000) => {
 
 const config = loadConfig();
 const port = args.port ? Number(args.port) : config.port;
-const { token } = await loadOrCreateToken({ path: config.tokenPath, envToken: config.envToken });
+if (!config.envSecret) {
+  console.error("Set RECORDFUL_BRIDGE_TOKEN to the secret baked into the extension build.");
+  process.exit(2);
+}
+const pairings = await PairingStore.open({
+  path: join(mkdtempSync(join(tmpdir(), "recordful-spike-state-")), "agent-bridge.json"),
+  envSecret: config.envSecret,
+});
 const bridge = new BridgeServer({
   port,
-  token,
-  allowedExtensionIds: config.allowedExtensionIds,
+  pairings,
+  // A throwaway profile's unpacked build has its own ID.
+  allowedExtensionIds: [],
   handshakeTimeoutMs: config.handshakeTimeoutMs,
+  pairingTimeoutMs: config.pairingTimeoutMs,
   heartbeatTimeoutMs: config.heartbeatTimeoutMs,
   logger: createLogger("info"),
 });

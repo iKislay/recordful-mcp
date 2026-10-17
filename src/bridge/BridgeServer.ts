@@ -4,12 +4,18 @@
 //
 // One authenticated session at a time: a new authenticated connection (the
 // extension reloaded, or its service worker restarted) supersedes the old one.
-import { randomUUID } from "node:crypto";
+//
+// An extension this machine hasn't paired with asks to pair first: the bridge
+// sends a 4-digit code, the extension shows it next to Allow, the agent shows
+// the same code in chat (PAIRING_PENDING), and on Allow the extension hands
+// over a fresh secret that both sides keep for every later connection.
+import { randomInt, randomUUID } from "node:crypto";
 import { EventEmitter } from "node:events";
 import { createServer, type IncomingMessage, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { WebSocket, WebSocketServer, type RawData } from "ws";
 import { computeProof, newNonce, verifyProof } from "../auth/handshake.js";
+import type { PairingStore } from "../auth/pairings.js";
 import { isValidExtensionId } from "../config.js";
 import type { Logger } from "../logger.js";
 import { BridgeError, ErrorCode } from "../protocol/errors.js";
@@ -18,20 +24,32 @@ import {
   BRIDGE_PATH,
   ClientMessage,
   CloseCode,
-  HelloMessage,
+  HandshakeMessage,
   MAX_MESSAGE_BYTES,
   PROTOCOL_VERSION,
   type ClientInfo,
   type EventMessage,
 } from "../protocol/messages.js";
 
+export type PairingStoreLike = Pick<PairingStore, "serverId" | "secretsFor" | "save">;
+
 export interface BridgeServerOptions {
   port: number;
-  token: string;
+  pairings: PairingStoreLike;
+  // Empty means any chrome-extension:// origin (development only).
   allowedExtensionIds: string[];
   handshakeTimeoutMs: number;
+  // How long the user has to click Allow or Deny in Recordful.
+  pairingTimeoutMs: number;
   heartbeatTimeoutMs: number;
   logger: Logger;
+}
+
+export interface PairingInfo {
+  code: string;
+  extensionId: string;
+  app: string;
+  startedAt: string;
 }
 
 export interface SessionInfo {
@@ -56,7 +74,28 @@ type Events = {
   connected: [SessionInfo];
   disconnected: [{ sessionId: string; reason: string }];
   event: [EventMessage];
+  pairing: [PairingInfo];
+  "pairing-ended": [{ outcome: "accepted" | "denied" | "abandoned" }];
 };
+
+// A denial stays visible to the agent this long, so its next call can say so
+// instead of asking the user to approve again straight away.
+const DENIAL_MEMORY_MS = 2 * 60_000;
+
+const pairingPendingError = (pairing: PairingInfo) =>
+  new BridgeError(
+    ErrorCode.PairingPending,
+    `Recordful is asking the user to approve ${pairing.app}. The code is ${pairing.code}.`,
+    {
+      code: pairing.code,
+      hint: `Tell the user: "Recordful opened a window asking to connect ${pairing.app}. Check that it shows the code ${pairing.code}, then click Allow." Then retry. This is needed only once per computer.`,
+    },
+  );
+
+const notConnectedError = () =>
+  new BridgeError(ErrorCode.NotConnected, "The Recordful extension is not connected.", {
+    hint: "Ask the user to click the Recordful toolbar icon in Chrome on the tab they want recorded, then retry. The first time only, they also turn on AI agents in Recordful (Recordful popup → More → AI agents, or paste chrome-extension://hkcgjbkibidgbefehehenlmhjanjaopc/agents.html into Chrome's address bar). If Recordful isn't installed: https://recordful.app",
+  });
 
 const HEARTBEAT_CHECK_MS = 5_000;
 
@@ -73,6 +112,9 @@ export class BridgeServer extends EventEmitter<Events> {
   private session: Session | null = null;
   private readonly pending = new Map<string, PendingRequest>();
   private heartbeatTimer: NodeJS.Timeout | null = null;
+  private pairingInProgress: (PairingInfo & { ws: WebSocket }) | null = null;
+  private lastDeniedAt = 0;
+  private app = "an AI app";
 
   constructor(opts: BridgeServerOptions) {
     super();
@@ -90,6 +132,18 @@ export class BridgeServer extends EventEmitter<Events> {
   get address(): { host: string; port: number } | null {
     const addr = this.http?.address() as AddressInfo | null | undefined;
     return addr ? { host: addr.address, port: addr.port } : null;
+  }
+
+  // The MCP client's name ("Claude Code"), shown in Recordful's pairing window.
+  setAppName(name: string): void {
+    const clean = name.replace(/[\u0000-\u001f]/g, "").trim().slice(0, 80);
+    if (clean) this.app = clean;
+  }
+
+  get pairing(): PairingInfo | null {
+    if (!this.pairingInProgress) return null;
+    const { ws: _ws, ...info } = this.pairingInProgress;
+    return info;
   }
 
   get currentSession(): SessionInfo | null {
@@ -146,6 +200,7 @@ export class BridgeServer extends EventEmitter<Events> {
     if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
     this.heartbeatTimer = null;
     this.dropSession(CloseCode.GoingAway, "bridge shutting down");
+    this.abandonPairing("bridge shutting down");
     const wss = this.wss;
     const http = this.http;
     this.wss = null;
@@ -155,28 +210,41 @@ export class BridgeServer extends EventEmitter<Events> {
     await new Promise<void>((resolve) => (http ? http.close(() => resolve()) : resolve()));
   }
 
-  // Resolves as soon as an authenticated extension is attached.
+  // Resolves as soon as an authenticated extension is attached. While the
+  // user is being asked to pair it waits for their answer, and a pairing that
+  // starts mid-wait ends the wait at once so the agent can show the code.
   waitForSession(timeoutMs: number): Promise<SessionInfo> {
     const current = this.currentSession;
     if (current) return Promise.resolve(current);
+    if (!this.pairingInProgress && Date.now() - this.lastDeniedAt < DENIAL_MEMORY_MS) {
+      return Promise.reject(
+        new BridgeError(ErrorCode.PairingDenied, "The user declined to connect Recordful to this app.", {
+          hint: "Don't retry on your own. If the user wants to connect after all, they can click the Recordful icon again and choose Allow.",
+        }),
+      );
+    }
+    const waitingOnPairing = this.pairingInProgress !== null;
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
+      const cleanup = () => {
+        clearTimeout(timer);
         this.off("connected", onConnected);
-        reject(
-          new BridgeError(
-            ErrorCode.NotConnected,
-            "The Recordful extension is not connected to the bridge.",
-            {
-              hint: "The extension connects on demand: ask the user to click the Recordful toolbar icon (or press its shortcut) on the tab they want recorded, then retry. That click also grants the tab-capture permission Chrome requires. If it still fails, the extension build may be missing the agent bridge or have a different pairing token.",
-            },
-          ),
-        );
+        this.off("pairing", onPairing);
+      };
+      const timer = setTimeout(() => {
+        cleanup();
+        reject(this.pairingInProgress ? pairingPendingError(this.pairing as PairingInfo) : notConnectedError());
       }, timeoutMs);
       const onConnected = (info: SessionInfo) => {
-        clearTimeout(timer);
+        cleanup();
         resolve(info);
       };
-      this.once("connected", onConnected);
+      const onPairing = (info: PairingInfo) => {
+        if (waitingOnPairing) return;
+        cleanup();
+        reject(pairingPendingError(info));
+      };
+      this.on("connected", onConnected);
+      this.on("pairing", onPairing);
     });
   }
 
@@ -211,8 +279,8 @@ export class BridgeServer extends EventEmitter<Events> {
     cb: (ok: boolean, code?: number, message?: string) => void,
   ): void {
     // Browsers always send Origin on WebSocket upgrades, so this shuts out web
-    // pages (DNS rebinding included). Native processes can forge it; the
-    // token handshake is what stops those.
+    // pages (DNS rebinding included) and other extensions. Native processes
+    // can forge it; pairing secrets are what stop those.
     const extensionId = originToExtensionId(req.headers.origin);
     const allowed =
       extensionId !== null &&
@@ -229,61 +297,144 @@ export class BridgeServer extends EventEmitter<Events> {
   }
 
   private onConnection(ws: WebSocket, req: IncomingMessage): void {
-    const originId = originToExtensionId(req.headers.origin);
+    const originId = originToExtensionId(req.headers.origin) as string;
     const serverNonce = newNonce();
     let authenticated: Session | null = null;
+    let pairing = false;
     const log = this.log.child({ originId });
 
-    const handshakeTimer = setTimeout(() => {
+    let handshakeTimer = setTimeout(() => {
       log.warn("handshake timed out");
       ws.close(CloseCode.HandshakeTimeout, "handshake timeout");
     }, this.opts.handshakeTimeoutMs);
 
+    const fail = (code: number, reason: string) => {
+      clearTimeout(handshakeTimer);
+      ws.close(code, reason);
+    };
+
+    // Handshake steps await the pairing store, so messages are handled in
+    // order: a hello must never overtake the pair_accept that makes it valid.
+    let inbox = Promise.resolve();
+
+    const onHandshake = async (msg: HandshakeMessage) => {
+      if ((msg.type === "hello" || msg.type === "pair_request") && msg.protocolVersion !== PROTOCOL_VERSION) {
+        log.warn("protocol version mismatch", { client: msg.protocolVersion });
+        fail(CloseCode.ProtocolVersion, `bridge speaks protocol ${PROTOCOL_VERSION}`);
+        return;
+      }
+
+      switch (msg.type) {
+        case "pair_request": {
+          if (pairing || msg.client.extensionId !== originId) {
+            fail(CloseCode.BadMessage, "unexpected pair_request");
+            return;
+          }
+          // One prompt at a time: a newer request (the user clicked again)
+          // replaces the older one.
+          this.abandonPairing("superseded by a newer pairing request");
+          pairing = true;
+          clearTimeout(handshakeTimer);
+          handshakeTimer = setTimeout(() => {
+            log.info("pairing timed out waiting for the user");
+            this.endPairing(ws, "abandoned");
+            ws.close(CloseCode.PairingTimeout, "pairing timed out");
+          }, this.opts.pairingTimeoutMs);
+          const info: PairingInfo = {
+            code: String(randomInt(0, 10_000)).padStart(4, "0"),
+            extensionId: originId,
+            app: this.app,
+            startedAt: new Date().toISOString(),
+          };
+          this.pairingInProgress = { ...info, ws };
+          ws.send(JSON.stringify({ type: "pair_code", code: info.code }));
+          log.info("pairing requested", { app: info.app });
+          this.emit("pairing", info);
+          return;
+        }
+        case "pair_accept": {
+          if (!pairing || this.pairingInProgress?.ws !== ws) {
+            fail(CloseCode.BadMessage, "unexpected pair_accept");
+            return;
+          }
+          await this.opts.pairings.save(originId, msg.secret, this.app);
+          pairing = false;
+          clearTimeout(handshakeTimer);
+          handshakeTimer = setTimeout(
+            () => fail(CloseCode.HandshakeTimeout, "handshake timeout"),
+            this.opts.handshakeTimeoutMs,
+          );
+          log.info("paired", { app: this.app });
+          this.endPairing(ws, "accepted");
+          return;
+        }
+        case "pair_reject": {
+          if (!pairing) {
+            fail(CloseCode.BadMessage, "unexpected pair_reject");
+            return;
+          }
+          log.info("pairing declined by the user");
+          this.lastDeniedAt = Date.now();
+          this.endPairing(ws, "denied");
+          fail(CloseCode.PairingRejected, "pairing declined");
+          return;
+        }
+        case "hello": {
+          if (pairing || msg.client.extensionId !== originId) {
+            fail(CloseCode.AuthFailed, "authentication failed");
+            return;
+          }
+          const secrets = await this.opts.pairings.secretsFor(originId);
+          const secret = secrets.find((candidate) =>
+            verifyProof(computeProof(candidate, "client", serverNonce, msg.clientNonce), msg.proof),
+          );
+          if (!secret) {
+            // Same reason for every failure: don't tell a prober which check failed.
+            log.warn("rejected connection: bad proof (not paired with this machine?)");
+            fail(CloseCode.AuthFailed, "authentication failed");
+            return;
+          }
+          clearTimeout(handshakeTimer);
+          this.lastDeniedAt = 0;
+          authenticated = {
+            sessionId: randomUUID(),
+            client: msg.client,
+            connectedAt: new Date().toISOString(),
+            ws,
+            lastSeenAt: Date.now(),
+          };
+          ws.send(
+            JSON.stringify({
+              type: "welcome",
+              sessionId: authenticated.sessionId,
+              proof: computeProof(secret, "server", serverNonce, msg.clientNonce),
+            }),
+          );
+          this.adoptSession(authenticated);
+          return;
+        }
+      }
+    };
+
     ws.on("message", (raw: RawData, isBinary: boolean) => {
       const parsed = parseJson(raw, isBinary);
       if (parsed === undefined) {
-        ws.close(CloseCode.BadMessage, "expected a JSON text frame");
+        fail(CloseCode.BadMessage, "expected a JSON text frame");
         return;
       }
 
       if (!authenticated) {
-        const hello = HelloMessage.safeParse(parsed);
-        if (!hello.success) {
-          ws.close(CloseCode.BadMessage, "expected hello");
+        const msg = HandshakeMessage.safeParse(parsed);
+        if (!msg.success) {
+          fail(CloseCode.BadMessage, "expected a handshake message");
           return;
         }
-        if (hello.data.protocolVersion !== PROTOCOL_VERSION) {
-          log.warn("protocol version mismatch", { client: hello.data.protocolVersion });
-          ws.close(CloseCode.ProtocolVersion, `bridge speaks protocol ${PROTOCOL_VERSION}`);
-          return;
-        }
-        if (hello.data.client.extensionId !== originId) {
-          ws.close(CloseCode.AuthFailed, "authentication failed");
-          return;
-        }
-        const expected = computeProof(this.opts.token, "client", serverNonce, hello.data.clientNonce);
-        if (!verifyProof(expected, hello.data.proof)) {
-          // Same reason string as above: don't tell a prober which check failed.
-          log.warn("rejected connection: bad proof (token mismatch?)");
-          ws.close(CloseCode.AuthFailed, "authentication failed");
-          return;
-        }
-        clearTimeout(handshakeTimer);
-        authenticated = {
-          sessionId: randomUUID(),
-          client: hello.data.client,
-          connectedAt: new Date().toISOString(),
-          ws,
-          lastSeenAt: Date.now(),
-        };
-        ws.send(
-          JSON.stringify({
-            type: "welcome",
-            sessionId: authenticated.sessionId,
-            proof: computeProof(this.opts.token, "server", serverNonce, hello.data.clientNonce),
-          }),
-        );
-        this.adoptSession(authenticated);
+        inbox = inbox
+          .then(() => onHandshake(msg.data))
+          .catch((err: unknown) => {
+            log.error("handshake failed", { err });
+            fail(CloseCode.AuthFailed, "authentication failed");
+          });
         return;
       }
 
@@ -298,6 +449,7 @@ export class BridgeServer extends EventEmitter<Events> {
 
     ws.on("close", (code, reason) => {
       clearTimeout(handshakeTimer);
+      if (pairing) this.endPairing(ws, "abandoned");
       if (authenticated && this.session === authenticated) {
         this.session = null;
         this.rejectAllPending(ErrorCode.Disconnected, "the extension disconnected");
@@ -312,8 +464,27 @@ export class BridgeServer extends EventEmitter<Events> {
     ws.on("error", (err) => log.warn("socket error", { err }));
 
     ws.send(
-      JSON.stringify({ type: "challenge", protocolVersion: PROTOCOL_VERSION, serverNonce }),
+      JSON.stringify({
+        type: "challenge",
+        protocolVersion: PROTOCOL_VERSION,
+        serverNonce,
+        serverId: this.opts.pairings.serverId,
+        app: this.app,
+      }),
     );
+  }
+
+  private endPairing(ws: WebSocket, outcome: "accepted" | "denied" | "abandoned"): void {
+    if (this.pairingInProgress?.ws !== ws) return;
+    this.pairingInProgress = null;
+    this.emit("pairing-ended", { outcome });
+  }
+
+  private abandonPairing(reason: string): void {
+    const previous = this.pairingInProgress;
+    if (!previous) return;
+    this.endPairing(previous.ws, "abandoned");
+    previous.ws.close(CloseCode.PairingTimeout, reason);
   }
 
   private adoptSession(next: Session): void {

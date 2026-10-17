@@ -1,0 +1,50 @@
+{
+  "manifest_version": "0.3",
+  "name": "recordful",
+  "display_name": "Recordful",
+  "version": "0.3.0",
+  "description": "Record product demos in Chrome: Claude plans the walkthrough, drives the page and records it with Recordful.",
+  "long_description": "Recordful is a Chrome extension for polished product videos. This extension lets Claude use it: ask \"record a demo of the sign-up flow\" and Claude plans a short walkthrough, asks you to click the Recordful icon on the tab, then navigates, clicks and types with a smooth on-screen cursor while Recordful records. When it stops, Recordful's editor opens with the video.\n\nEverything runs on your computer. The first time, turn on AI agents in Recordful's settings and approve the pairing code Claude shows you.\n\nRequires the Recordful extension for Chrome: https://chromewebstore.google.com/detail/hkcgjbkibidgbefehehenlmhjanjaopc",
+  "author": {
+    "name": "Kislay",
+    "url": "https://recordful.app"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iKislay/recordful-mcp"
+  },
+  "homepage": "https://recordful.app",
+  "documentation": "https://github.com/iKislay/recordful-mcp#readme",
+  "support": "https://github.com/iKislay/recordful-mcp/issues",
+  "icon": "icon.png",
+  "server": {
+    "type": "node",
+    "entry_point": "dist/cli.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/dist/cli.js"]
+    }
+  },
+  "tools": [
+    { "name": "get_status", "description": "Connection, recorder state, recording mode and the tab handed over" },
+    { "name": "start_recording", "description": "Start recording with the user's Recordful settings" },
+    { "name": "pause_recording", "description": "Pause, so thinking time stays out of the video" },
+    { "name": "resume_recording", "description": "Resume a paused recording" },
+    { "name": "stop_recording", "description": "Stop; Recordful's editor opens with the video" },
+    { "name": "navigate", "description": "Open a URL in the handed-over tab" },
+    { "name": "snapshot", "description": "List the page's interactive elements with refs" },
+    { "name": "click", "description": "Click an element with a visible, smooth cursor" },
+    { "name": "type", "description": "Type into a field at a human pace" },
+    { "name": "press", "description": "Press a key, such as Enter or Tab" },
+    { "name": "scroll", "description": "Scroll smoothly to an element or by an amount" },
+    { "name": "wait_for", "description": "Wait for text or an element to appear or go away" },
+    { "name": "screenshot", "description": "See what the tab shows right now" },
+    { "name": "probe_capture", "description": "Diagnose capture permissions" }
+  ],
+  "prompts_generated": true,
+  "keywords": ["recordful", "screen recording", "product demo", "video", "chrome", "browser"],
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": { "node": ">=20.10.0" }
+  }
+}

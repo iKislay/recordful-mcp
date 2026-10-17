@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "recordful": {
+      "command": "npx",
+      "args": ["-y", "recordful-mcp"]
+    }
+  }
+}

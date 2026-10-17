@@ -5,3 +5,4 @@ coverage/
 .env
 .env.*
 spike-out/
+recordful.mcpb

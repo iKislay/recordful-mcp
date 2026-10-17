@@ -7,6 +7,8 @@ export const ErrorCode = {
   Timeout: "TIMEOUT",
   BridgeUnavailable: "BRIDGE_UNAVAILABLE",
   InvalidParams: "INVALID_PARAMS",
+  PairingPending: "PAIRING_PENDING",
+  PairingDenied: "PAIRING_DENIED",
   // extension-side (mirrored in the extension adapter)
   UnknownMethod: "UNKNOWN_METHOD",
   AlreadyRecording: "ALREADY_RECORDING",

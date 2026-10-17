@@ -21,11 +21,11 @@ export interface McpServerDeps {
 }
 
 const INSTRUCTIONS = `
-Recordful records the user's browser so you can produce product demo videos. It can also drive the page it records, so you don't need a browser tool of your own.
+Recordful records the user's browser so you can produce product demo videos. It also drives the page it records, so you don't need a browser tool of your own.
 
-Typical flow for "record feature X":
-1. Plan the walkthrough first: which page, which clicks, what to type, in what order.
-2. Ask the user to click the Recordful toolbar icon on the tab to record. That click hands the tab to you: Chrome only lets an extension capture a tab after the user has invoked it there, and the same click connects Recordful to you. Nothing can do this click for them. Page tools only ever act on that tab.
+Typical flow for "record feature X" (the record_feature prompt has the full version):
+1. Plan the walkthrough first: which page, which clicks, what to type, in what order. Use test data only, never the user's real credentials.
+2. Ask the user to click the Recordful toolbar icon in Chrome on the tab to record. Chrome only lets an extension capture a tab after the user has invoked it there, and the same click connects Recordful to you. Nothing can do this click for them. Page tools only ever act on that tab.
 3. Call get_status. It confirms the connection, shows the tab you were handed (recorder.agent.armedTab), and reports the recording mode the user picked in Recordful (tab area, screen, camera) and whether a recording is already running.
 4. Get to the starting page before recording: navigate(url), then snapshot() to check it loaded.
 5. Call start_recording. It uses the user's saved Recordful settings (mode, mic, camera, countdown) and returns once capture is live.
@@ -33,7 +33,12 @@ Typical flow for "record feature X":
 7. Call pause_recording before you stop to think or plan the next steps, and resume_recording right before acting again, so the video has no dead air. snapshot and screenshot work while paused.
 8. Call stop_recording. Recordful opens its editor with the recording automatically.
 
-If a tool reports NOT_CONNECTED or NOT_ARMED, or start_recording returns outcome "pending", the user hasn't clicked the Recordful icon on the tab yet: ask them to, then retry.
+First connection on a computer:
+- NOT_CONNECTED: ask the user to click the Recordful icon. If that doesn't connect, they need to turn on AI agents in Recordful once (Recordful popup → More → AI agents, or paste chrome-extension://hkcgjbkibidgbefehehenlmhjanjaopc/agents.html into Chrome's address bar).
+- PAIRING_PENDING: Recordful opened a window asking the user to approve you. Tell them the 4-digit code from the error so they can check it matches, ask them to click Allow, then retry. This happens once per computer.
+- PAIRING_DENIED: the user declined. Don't retry unless they ask.
+- NOT_ARMED, or start_recording returning outcome "pending": the user hasn't clicked the Recordful icon on that tab yet. Ask them to, then retry.
+
 If you have a browser tool of your own you can use it for the walkthrough instead, but Recordful's page tools make smoother videos.
 "screen" mode always shows Chrome's screen picker, which the user must answer.
 `.trim();
@@ -128,15 +133,25 @@ export const createMcpServer = (deps: McpServerDeps): McpServer => {
     },
     async () => {
       const session = bridge.currentSession;
+      const pairing = bridge.pairing;
       const base = {
         bridge: {
           listening: bridge.listening,
           bindError: binding?.lastError?.message ?? null,
           extensionConnected: session !== null,
           session,
+          pairing: pairing ? { code: pairing.code, app: pairing.app, startedAt: pairing.startedAt } : null,
         },
       };
-      if (!session) return text({ ...base, recorder: null });
+      if (!session) {
+        return text({
+          ...base,
+          recorder: null,
+          hint: pairing
+            ? `Recordful is waiting for the user to approve this app. Ask them to check the code ${pairing.code} and click Allow.`
+            : "Ask the user to click the Recordful toolbar icon in Chrome on the tab to record. The first time only, they also turn on AI agents (Recordful popup → More → AI agents).",
+        });
+      }
       try {
         return text({ ...base, recorder: await call(Method.StatusGet, {}) });
       } catch (err) {
@@ -221,7 +236,7 @@ export const createMcpServer = (deps: McpServerDeps): McpServer => {
     } catch (err) {
       if (err instanceof BridgeError && err.code === ErrorCode.UnknownMethod) {
         throw new BridgeError(err.code, err.message, {
-          hint: "This Recordful build predates page tools. Rebuild it with `npm run build:agent` and reload the extension.",
+          hint: "This version of Recordful predates page tools. Ask the user to update Recordful (chrome://extensions → Update) and try again.",
         });
       }
       throw err;
@@ -330,5 +345,41 @@ export const createMcpServer = (deps: McpServerDeps): McpServer => {
     },
   );
 
+  // ---- prompts -------------------------------------------------------------
+  // The whole "record the feature I just built" workflow, shipped with the
+  // server so every MCP client gets it (Claude Code lists it as
+  // /mcp__recordful__record_feature).
+
+  server.registerPrompt(
+    "record_feature",
+    {
+      title: "Record a feature demo",
+      description:
+        "Plan and record a short product demo of a feature with Recordful: work out the user-facing flow, get the app running with test data, record a clean walkthrough, and open it in the editor.",
+      argsSchema: {
+        feature: z.string().describe("The feature to show, e.g. \"sign up and sign in\" or \"the new billing page\"."),
+        url: z
+          .string()
+          .optional()
+          .describe("Where the app runs, e.g. http://localhost:3000. Leave empty to work it out from the project."),
+      },
+    },
+    ({ feature, url }) => ({
+      messages: [{ role: "user", content: { type: "text", text: recordFeaturePrompt(feature, url) } }],
+    }),
+  );
+
   return server;
 };
+
+export const recordFeaturePrompt = (feature: string, url?: string): string => `Record a product demo video of this feature with Recordful: ${feature}
+
+1. Understand it as a user sees it. If you or the user just built it, read the changes (git diff, recent commits, routes, pages, components). List the screens and moments worth showing: the main path first, then at most one or two telling states (for example a validation error). Leave out internals.
+2. Get the app running. ${url ? `It should be at ${url}.` :"If it's a local project, find how to run it (package.json scripts, README, Makefile, docker compose) and the URL it serves."} If it isn't running, start it in the background and wait until it answers.
+3. Prepare test data. Use test accounts and data only: from seed, fixture or example-config files, or create a new one through the app itself (for example sign up as demo+<timestamp>@example.com with a generated password). Never type the user's real credentials or personal data; if real credentials are unavoidable, ask the user to sign in themselves first.
+4. Write a short shot list, 5 to 10 steps for a 30 to 90 second video: the starting screen, the main action, the result, an optional second state, and a clear final screen. Share it with the user in a line or two, then go ahead unless something is unclear.
+5. Ask the user to click the Recordful icon in Chrome on the tab with the app. The first time only, they also turn on AI agents (Recordful popup → More → AI agents), and approve the pairing code you'll get back. Then call get_status.
+6. navigate to the starting page and snapshot it. Make sure the starting state is clean (signed out for a sign-in demo, no leftover data or open dialogs).
+7. start_recording, then follow the shot list with the page tools at a calm pace. Use wait_for so each result is visible before you move on. Call pause_recording whenever you need to think, and resume_recording right before the next action, so the video has no dead air.
+8. If something goes wrong while recording (an error, the wrong page), pause, fix it, and resume. Stop and start over only if the mistake would confuse viewers.
+9. stop_recording. Recordful opens its editor with the video. Tell the user it's ready and summarise what the video shows in one or two sentences.`;

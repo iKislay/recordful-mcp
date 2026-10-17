@@ -6,9 +6,9 @@ Today `recordful-mcp` gives an agent the **recorder controls**. The agent still 
 
 The fix is to have Recordful drive the page as well. The extension already runs in the tab being recorded, with `scripting`, `tabs` and `<all_urls>`, so it can act on that page directly.
 
-## Phase 1: self-sufficient recording (in progress)
+## Phase 1: self-sufficient recording (shipped in 0.2 and 0.3)
 
-Page tools, demo-quality motion and armed-tab targeting are implemented in development builds; see [protocol.md](protocol.md#page-methods). Still to do: the arm-flow badge and stop button, fail-fast starts, markers and pairing.
+Page tools, demo-quality motion, armed-tab targeting, fail-fast starts, the "AI" badge, pairing from Recordful's UI, and shipping in the store build behind the AI agents switch are done. Still open: a stop button for the agent session on the page itself, and markers.
 
 | Area | Work |
 | --- | --- |

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "io.github.ikislay/recordful-mcp",
+  "title": "Recordful",
+  "description": "Record product demos in Chrome: plan, drive the page and record it with the Recordful extension.",
+  "repository": {
+    "url": "https://github.com/iKislay/recordful-mcp",
+    "source": "github"
+  },
+  "websiteUrl": "https://recordful.app",
+  "version": "0.3.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "recordful-mcp",
+      "version": "0.3.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

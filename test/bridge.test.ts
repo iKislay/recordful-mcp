@@ -4,7 +4,7 @@ import { silentLogger } from "../src/logger.js";
 import { BridgeError, ErrorCode } from "../src/protocol/errors.js";
 import { CloseCode, MAX_MESSAGE_BYTES } from "../src/protocol/messages.js";
 import { pageExtraWaitMs, parsePageParams } from "../src/protocol/page.js";
-import { connectFakeExtension, EXTENSION_ID, TOKEN, type FakeExtension } from "./helpers/fakeExtension.js";
+import { connectFakeExtension, memoryPairings, EXTENSION_ID, TOKEN, type FakeExtension } from "./helpers/fakeExtension.js";
 
 const servers: BridgeServer[] = [];
 const clients: FakeExtension[] = [];
@@ -12,7 +12,8 @@ const clients: FakeExtension[] = [];
 const startBridge = async (overrides: Partial<ConstructorParameters<typeof BridgeServer>[0]> = {}) => {
   const bridge = new BridgeServer({
     port: 0,
-    token: TOKEN,
+    pairings: memoryPairings(),
+    pairingTimeoutMs: 1_000,
     allowedExtensionIds: [],
     handshakeTimeoutMs: 1_000,
     heartbeatTimeoutMs: 60_000,
@@ -106,7 +107,8 @@ describe("BridgeServer handshake", () => {
     const { port } = await startBridge();
     const second = new BridgeServer({
       port,
-      token: TOKEN,
+      pairings: memoryPairings(),
+    pairingTimeoutMs: 1_000,
       allowedExtensionIds: [],
       handshakeTimeoutMs: 1_000,
       heartbeatTimeoutMs: 60_000,

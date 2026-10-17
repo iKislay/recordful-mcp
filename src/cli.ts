@@ -1,43 +1,52 @@
 #!/usr/bin/env node
-// recordful-mcp: MCP server (default) plus a few operator commands for pairing
-// and debugging the bridge without an MCP client in the loop.
+// recordful-mcp: MCP server (default) plus a few operator commands for setup,
+// pairing and debugging the bridge without an MCP client in the loop.
 import { createRequire } from "node:module";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { loadOrCreateToken } from "./auth/token.js";
+import { PairingStore } from "./auth/pairings.js";
 import { BridgeServer } from "./bridge/BridgeServer.js";
 import { keepBound } from "./bridge/keepBound.js";
+import { appDisplayName } from "./clientNames.js";
 import { loadConfig, type BridgeConfig } from "./config.js";
 import { createLogger, type Logger } from "./logger.js";
 import { createMcpServer } from "./mcp/createMcpServer.js";
 import { BridgeError } from "./protocol/errors.js";
 import { isMethod, METHODS } from "./protocol/methods.js";
 import { isPageMethod, pageExtraWaitMs, parsePageParams } from "./protocol/page.js";
+import { setupGuide } from "./setupGuide.js";
 
 const { version } = createRequire(import.meta.url)("../package.json") as { version: string };
 
-const HELP = `recordful-mcp ${version}
+const HELP = `recordful-mcp ${version}: let any AI app record product demos with Recordful
 
 Usage:
-  recordful-mcp [serve]              Run the MCP server on stdio (what MCP clients launch)
-  recordful-mcp token [--rotate]     Print the pairing token, creating it if needed
-  recordful-mcp call <method> [json] Call one extension method directly and print the result
-                                     methods: ${METHODS.join(", ")}
+  recordful-mcp                       Run the MCP server on stdio (what AI apps launch)
+  recordful-mcp setup                 Show how to add Recordful to Claude, Cursor, VS Code, opencode and others
+  recordful-mcp status                Show this computer's pairing state
+  recordful-mcp unpair [<id>|--all]   Forget a paired Recordful extension (or all of them)
+  recordful-mcp call <method> [json]  Call one extension method directly (debugging)
+                                      methods: ${METHODS.join(", ")}
   recordful-mcp --version | --help
 
-Environment:
-  RECORDFUL_BRIDGE_PORT                    WebSocket port on 127.0.0.1 (default 47823)
-  RECORDFUL_BRIDGE_TOKEN                   Pairing token (overrides the token file)
-  RECORDFUL_BRIDGE_TOKEN_PATH              Token file (default ~/.recordful/agent-bridge.json)
-  RECORDFUL_BRIDGE_ALLOWED_EXTENSION_IDS   Comma-separated extension IDs allowed to pair
+Environment (all optional):
+  RECORDFUL_BRIDGE_PORT                    Local WebSocket port on 127.0.0.1 (default 47823)
+  RECORDFUL_BRIDGE_ALLOWED_EXTENSION_IDS   Extra extension IDs allowed to connect, comma-separated
+                                           (the Chrome Web Store build is always allowed; * allows any)
+  RECORDFUL_BRIDGE_STATE_PATH              Pairing file (default ~/.recordful/agent-bridge.json)
+  RECORDFUL_BRIDGE_TOKEN                   Shared secret instead of pairing, for CI and scripted runs
   RECORDFUL_BRIDGE_LOG_LEVEL               debug | info | warn | error (default info, on stderr)
 `;
 
-const createBridge = (config: BridgeConfig, token: string, logger: Logger) =>
+const openStore = (config: BridgeConfig) =>
+  PairingStore.open({ path: config.statePath, envSecret: config.envSecret });
+
+const createBridge = (config: BridgeConfig, pairings: PairingStore, logger: Logger) =>
   new BridgeServer({
     port: config.port,
-    token,
+    pairings,
     allowedExtensionIds: config.allowedExtensionIds,
     handshakeTimeoutMs: config.handshakeTimeoutMs,
+    pairingTimeoutMs: config.pairingTimeoutMs,
     heartbeatTimeoutMs: config.heartbeatTimeoutMs,
     logger,
   });
@@ -45,22 +54,26 @@ const createBridge = (config: BridgeConfig, token: string, logger: Logger) =>
 const warnOpenAllowlist = (config: BridgeConfig, logger: Logger) => {
   if (config.allowedExtensionIds.length === 0) {
     logger.warn(
-      "RECORDFUL_BRIDGE_ALLOWED_EXTENSION_IDS is empty: any extension holding the token may pair. Pin your extension ID outside local development.",
+      "RECORDFUL_BRIDGE_ALLOWED_EXTENSION_IDS=* lets any extension connect and ask to pair. Use it for development only.",
     );
   }
 };
 
 const serve = async (config: BridgeConfig, logger: Logger) => {
-  const { token, source, path } = await loadOrCreateToken({
-    path: config.tokenPath,
-    envToken: config.envToken,
-  });
-  logger.info("token loaded", { source, path: source === "env" ? null : path });
+  const pairings = await openStore(config);
+  logger.info("pairing state loaded", { path: pairings.path, serverId: pairings.serverId });
   warnOpenAllowlist(config, logger);
 
-  const bridge = createBridge(config, token, logger);
+  const bridge = createBridge(config, pairings, logger);
   const binding = keepBound(bridge, config.rebindIntervalMs, logger);
   const mcp = createMcpServer({ bridge, binding, config, logger, version });
+
+  // Recordful's pairing window names the app asking ("Claude Code wants to
+  // control Recordful"), taken from the MCP client's own introduction.
+  mcp.server.oninitialized = () => {
+    const client = mcp.server.getClientVersion();
+    if (client) bridge.setAppName(appDisplayName(client));
+  };
 
   let shuttingDown = false;
   const shutdown = async (reason: string) => {
@@ -80,23 +93,33 @@ const serve = async (config: BridgeConfig, logger: Logger) => {
   logger.info("mcp server ready", { version });
 };
 
-const tokenCommand = async (config: BridgeConfig, args: string[]) => {
-  const loaded = await loadOrCreateToken({
-    path: config.tokenPath,
-    envToken: config.envToken,
-    rotate: args.includes("--rotate"),
-  });
+const statusCommand = async (config: BridgeConfig) => {
+  const pairings = await openStore(config);
+  const list = await pairings.list();
+  const lines = [
+    `recordful-mcp ${version}`,
+    `pairing file:  ${pairings.path}`,
+    `bridge port:   127.0.0.1:${config.port}`,
+    `allowed:       ${config.allowedExtensionIds.length ? config.allowedExtensionIds.join(", ") : "any extension (*)"}`,
+    "",
+    list.length
+      ? "paired Recordful extensions:"
+      : "No Recordful extension has paired with this computer yet. It happens the first time an AI app uses Recordful.",
+    ...list.map((p) => `  ${p.extensionId}  first paired by ${p.app}, ${p.pairedAt}`),
+    "",
+  ];
+  process.stdout.write(lines.join("\n"));
+};
+
+const unpairCommand = async (config: BridgeConfig, args: string[]) => {
+  const [target] = args;
+  if (!target) throw new Error("unpair needs an extension ID (see `recordful-mcp status`) or --all");
+  const pairings = await openStore(config);
+  const removed = await pairings.remove(target === "--all" ? undefined : target);
   process.stdout.write(
-    [
-      `token:  ${loaded.token}`,
-      `source: ${loaded.source}${loaded.source === "env" ? "" : ` (${loaded.path})`}`,
-      "",
-      "Give the extension the same token, either at build time:",
-      `  RECORDFUL_AGENT_BRIDGE_TOKEN=${loaded.token}`,
-      "or at runtime, from the extension service worker's DevTools console:",
-      `  chrome.storage.local.set({ agentBridgeToken: "${loaded.token}" })`,
-      "",
-    ].join("\n"),
+    removed
+      ? `Forgot ${removed} pairing${removed === 1 ? "" : "s"}. Recordful will ask to pair again next time.\n`
+      : "Nothing to forget.\n",
   );
 };
 
@@ -114,13 +137,26 @@ const callCommand = async (config: BridgeConfig, logger: Logger, args: string[])
     params = parsed as Record<string, unknown>;
   }
   if (isPageMethod(method)) params = parsePageParams(method, params) as Record<string, unknown>;
-  const { token } = await loadOrCreateToken({ path: config.tokenPath, envToken: config.envToken });
+  const pairings = await openStore(config);
   warnOpenAllowlist(config, logger);
-  const bridge = createBridge(config, token, logger);
+  const bridge = createBridge(config, pairings, logger);
+  bridge.setAppName("recordful-mcp (command line)");
   await bridge.start();
   try {
-    logger.info("waiting for the extension to connect (up to 60s)");
-    await bridge.waitForSession(60_000);
+    logger.info("waiting for Recordful to connect: click its toolbar icon in Chrome (up to 2 minutes)");
+    const deadline = Date.now() + 120_000;
+    for (;;) {
+      try {
+        await bridge.waitForSession(Math.max(1_000, deadline - Date.now()));
+        break;
+      } catch (err) {
+        if (err instanceof BridgeError && err.code === "PAIRING_PENDING" && Date.now() < deadline) {
+          logger.info("approve the pairing in Recordful", { code: (err.data as { code: string }).code });
+          continue;
+        }
+        throw err;
+      }
+    }
     const extra = isPageMethod(method)
       ? pageExtraWaitMs(method, params)
       : typeof params.timeoutMs === "number"
@@ -150,8 +186,13 @@ const main = async () => {
   switch (command) {
     case "serve":
       return serve(config, logger);
-    case "token":
-      return tokenCommand(config, rest);
+    case "setup":
+      process.stdout.write(setupGuide());
+      return;
+    case "status":
+      return statusCommand(config);
+    case "unpair":
+      return unpairCommand(config, rest);
     case "call":
       return callCommand(config, logger, rest);
     default:

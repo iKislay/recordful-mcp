@@ -5,7 +5,7 @@ import { BridgeServer } from "../src/bridge/BridgeServer.js";
 import { loadConfig } from "../src/config.js";
 import { silentLogger } from "../src/logger.js";
 import { createMcpServer } from "../src/mcp/createMcpServer.js";
-import { connectFakeExtension, TOKEN, type FakeExtension, type Handler } from "./helpers/fakeExtension.js";
+import { connectFakeExtension, memoryPairings, TOKEN, type FakeExtension, type Handler } from "./helpers/fakeExtension.js";
 
 const cleanups: Array<() => Promise<void> | void> = [];
 afterEach(async () => {
@@ -16,7 +16,8 @@ const setup = async (handlers?: Record<string, Handler>) => {
   const config = { ...loadConfig({}), port: 0, connectWaitMs: 200 };
   const bridge = new BridgeServer({
     port: 0,
-    token: TOKEN,
+    pairings: memoryPairings(),
+    pairingTimeoutMs: 1_000,
     allowedExtensionIds: [],
     handshakeTimeoutMs: 1_000,
     heartbeatTimeoutMs: 60_000,
@@ -229,13 +230,61 @@ describe("MCP page tools", () => {
     expect(textOf(result).error).toMatchObject({ code: "STALE_REF" });
   });
 
-  it("tells the agent to rebuild an extension that predates page tools", async () => {
+  it("tells the agent to update a Recordful that predates page tools", async () => {
     // The fake extension answers UNKNOWN_METHOD for anything it has no handler for.
     const { client } = await setup({ "status.get": () => ({ state: "idle" }) });
     const result = await client.callTool({ name: "snapshot", arguments: {} });
     expect(result.isError).toBe(true);
     const { error } = textOf(result);
     expect(error.code).toBe("UNKNOWN_METHOD");
-    expect(error.data.hint).toMatch(/build:agent/);
+    expect(error.data.hint).toMatch(/update Recordful/);
+  });
+});
+
+describe("MCP prompts and pairing", () => {
+  it("offers the record_feature workflow as a prompt", async () => {
+    const { client } = await setup();
+    const { prompts } = await client.listPrompts();
+    expect(prompts.map((p) => p.name)).toEqual(["record_feature"]);
+    expect(prompts[0]?.arguments?.map((a) => [a.name, a.required ?? false])).toEqual([
+      ["feature", true],
+      ["url", false],
+    ]);
+    const prompt = await client.getPrompt({
+      name: "record_feature",
+      arguments: { feature: "sign up and sign in", url: "http://localhost:3000" },
+    });
+    const text = (prompt.messages[0]?.content as { text: string }).text;
+    expect(text).toContain("sign up and sign in");
+    expect(text).toContain("It should be at http://localhost:3000.");
+    expect(text).toMatch(/test accounts and data only/);
+    expect(text).toMatch(/start_recording/);
+  });
+
+  it("works out where the app runs when no url is given", async () => {
+    const { client } = await setup();
+    const prompt = await client.getPrompt({ name: "record_feature", arguments: { feature: "billing" } });
+    expect((prompt.messages[0]?.content as { text: string }).text).toMatch(/find how to run it/);
+  });
+
+  it("get_status shows an open pairing prompt and its code", async () => {
+    const { client, bridge } = await setup();
+    const extension = connectFakeExtension({ port: bridge.address!.port, token: null, pairing: "ignore" });
+    cleanups.push(() => extension.close());
+    const code = await extension.pairCode;
+    const out = textOf(await client.callTool({ name: "get_status", arguments: {} }));
+    expect(out.bridge.pairing).toMatchObject({ code });
+    expect(out.hint).toContain(code);
+  });
+
+  it("returns PAIRING_PENDING with the code to a tool waiting on a new extension", async () => {
+    const { client, bridge } = await setup();
+    const call = client.callTool({ name: "start_recording", arguments: {} });
+    const extension = connectFakeExtension({ port: bridge.address!.port, token: null, pairing: "ignore" });
+    cleanups.push(() => extension.close());
+    const code = await extension.pairCode;
+    const result = await call;
+    expect(result.isError).toBe(true);
+    expect(textOf(result).error).toMatchObject({ code: "PAIRING_PENDING", data: { code } });
   });
 });
