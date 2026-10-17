@@ -6,7 +6,9 @@ Today `recordful-mcp` gives an agent the **recorder controls**. The agent still 
 
 The fix is to have Recordful drive the page as well. The extension already runs in the tab being recorded, with `scripting`, `tabs` and `<all_urls>`, so it can act on that page directly.
 
-## Phase 1: self-sufficient recording (next)
+## Phase 1: self-sufficient recording (in progress)
+
+Page tools, demo-quality motion and armed-tab targeting are implemented in development builds; see [protocol.md](protocol.md#page-methods). Still to do: the arm-flow badge and stop button, fail-fast starts, markers and pairing.
 
 | Area | Work |
 | --- | --- |

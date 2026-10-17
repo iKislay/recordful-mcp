@@ -11,6 +11,7 @@ import { createLogger, type Logger } from "./logger.js";
 import { createMcpServer } from "./mcp/createMcpServer.js";
 import { BridgeError } from "./protocol/errors.js";
 import { isMethod, METHODS } from "./protocol/methods.js";
+import { isPageMethod, pageExtraWaitMs, parsePageParams } from "./protocol/page.js";
 
 const { version } = createRequire(import.meta.url)("../package.json") as { version: string };
 
@@ -112,6 +113,7 @@ const callCommand = async (config: BridgeConfig, logger: Logger, args: string[])
     }
     params = parsed as Record<string, unknown>;
   }
+  if (isPageMethod(method)) params = parsePageParams(method, params) as Record<string, unknown>;
   const { token } = await loadOrCreateToken({ path: config.tokenPath, envToken: config.envToken });
   warnOpenAllowlist(config, logger);
   const bridge = createBridge(config, token, logger);
@@ -119,7 +121,11 @@ const callCommand = async (config: BridgeConfig, logger: Logger, args: string[])
   try {
     logger.info("waiting for the extension to connect (up to 60s)");
     await bridge.waitForSession(60_000);
-    const extra = typeof params.timeoutMs === "number" ? params.timeoutMs : 30_000;
+    const extra = isPageMethod(method)
+      ? pageExtraWaitMs(method, params)
+      : typeof params.timeoutMs === "number"
+        ? params.timeoutMs
+        : 30_000;
     const result = await bridge.request(method, params, config.requestTimeoutMs + extra);
     process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   } finally {

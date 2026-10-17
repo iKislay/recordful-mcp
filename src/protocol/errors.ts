@@ -16,6 +16,15 @@ export const ErrorCode = {
   StartFailed: "START_FAILED",
   StopFailed: "STOP_FAILED",
   Internal: "INTERNAL",
+  // page tools (extension-side)
+  NotArmed: "NOT_ARMED",
+  TabNotActive: "TAB_NOT_ACTIVE",
+  PageNotScriptable: "PAGE_NOT_SCRIPTABLE",
+  StaleRef: "STALE_REF",
+  ElementNotInteractable: "ELEMENT_NOT_INTERACTABLE",
+  ElementObscured: "ELEMENT_OBSCURED",
+  NavigationFailed: "NAVIGATION_FAILED",
+  WaitTimeout: "WAIT_TIMEOUT",
 } as const;
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
 

@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import { BridgeServer, originToExtensionId } from "../src/bridge/BridgeServer.js";
 import { silentLogger } from "../src/logger.js";
 import { BridgeError, ErrorCode } from "../src/protocol/errors.js";
-import { CloseCode } from "../src/protocol/messages.js";
+import { CloseCode, MAX_MESSAGE_BYTES } from "../src/protocol/messages.js";
+import { pageExtraWaitMs, parsePageParams } from "../src/protocol/page.js";
 import { connectFakeExtension, EXTENSION_ID, TOKEN, type FakeExtension } from "./helpers/fakeExtension.js";
 
 const servers: BridgeServer[] = [];
@@ -188,5 +189,53 @@ describe("BridgeServer requests", () => {
     // The check runs every 5s; the session has been silent well past 50ms by then.
     expect((await client.closed).code).toBe(CloseCode.HeartbeatTimeout);
     expect(bridge.currentSession).toBeNull();
+  });
+});
+
+describe("page methods", () => {
+  it("round-trip through the extension with params intact", async () => {
+    const { bridge, port } = await startBridge();
+    const seen: unknown[] = [];
+    await connect({
+      port,
+      handlers: {
+        "page.click": (p) => {
+          seen.push(p);
+          return { clicked: "e3", at: { x: 10, y: 20 } };
+        },
+      },
+    }).ready;
+    const params = parsePageParams("page.click", { ref: "e3" });
+    await expect(bridge.request("page.click", params, 1_000)).resolves.toEqual({
+      clicked: "e3",
+      at: { x: 10, y: 20 },
+    });
+    expect(seen).toEqual([{ ref: "e3" }]);
+  });
+
+  it("accepts a screenshot-sized response under the message cap", async () => {
+    const { bridge, port } = await startBridge();
+    // A downscaled JPEG is a few hundred KB of base64; the cap leaves headroom.
+    const data = "A".repeat(700 * 1024);
+    await connect({ port, handlers: { "page.screenshot": () => ({ mimeType: "image/jpeg", data }) } }).ready;
+    const shot = (await bridge.request("page.screenshot", {}, 2_000)) as { data: string };
+    expect(shot.data.length).toBe(data.length);
+    expect(data.length).toBeLessThan(MAX_MESSAGE_BYTES);
+  });
+
+  it("validates params strictly and drops undefined fields", () => {
+    expect(parsePageParams("page.type", { ref: "e1", text: "hi", clear: undefined })).toEqual({ ref: "e1", text: "hi" });
+    expect(() => parsePageParams("page.click", { ref: "e1", extra: true })).toThrow(BridgeError);
+    expect(() => parsePageParams("page.navigate", { url: "chrome://settings" })).toThrow(/http/);
+    expect(parsePageParams("page.press", { key: "Control+Shift+ArrowLeft" })).toEqual({ key: "Control+Shift+ArrowLeft" });
+    expect(parsePageParams("page.press", { key: "+" })).toEqual({ key: "+" });
+    expect(() => parsePageParams("page.scroll", {})).toThrow(/exactly one/);
+    expect(() => parsePageParams("page.waitFor", { text: "x", ref: "e2" })).toThrow(/exactly one/);
+  });
+
+  it("budgets time for human-paced typing and waits", () => {
+    expect(pageExtraWaitMs("page.type", { text: "x".repeat(100), delayMs: 100 })).toBeGreaterThan(100 * 200);
+    expect(pageExtraWaitMs("page.waitFor", { timeoutMs: 30_000 })).toBe(30_000);
+    expect(pageExtraWaitMs("page.snapshot", {})).toBe(0);
   });
 });

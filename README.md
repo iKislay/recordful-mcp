@@ -2,7 +2,7 @@
 
 An [MCP](https://modelcontextprotocol.io) server that lets AI agents (Claude Code, Claude Desktop, Cursor, any MCP client) drive the [Recordful](https://recordful.app) browser extension's recorder: start, pause, resume and stop recordings, with Recordful's editor opening automatically afterwards.
 
-> **Status: Phase 0 spike, verified.** In the user's Chrome, the agent started, paused, resumed and stopped recordings through the bridge, and the editor opened automatically. Chrome needs one human click on the Recordful icon per tab before capture can start; see [docs/phase-0-findings.md](docs/phase-0-findings.md).
+> **Status: Phase 1 page tools, in development.** Recordful can now drive the tab it records (navigate, snapshot, click, type, press, scroll, wait, screenshot), so an agent with no browser tool of its own can record a feature end to end. Phase 0 is verified: in the user's Chrome, the agent started, paused, resumed and stopped recordings through the bridge, and the editor opened automatically. Chrome needs one human click on the Recordful icon per tab before capture can start; see [docs/phase-0-findings.md](docs/phase-0-findings.md) and [docs/phase-1-findings.md](docs/phase-1-findings.md).
 
 ## How it works
 
@@ -18,7 +18,7 @@ recordful-mcp  ── WebSocket on 127.0.0.1:47823, mutual HMAC handshake ──
                                                      → recorder → editor opens on stop
 ```
 
-- The agent does the "what to record" part with whatever browser tool it already has (Claude in Chrome, Playwright MCP, computer use). This server only provides the recorder controls.
+- Recordful also performs the walkthrough itself through the page tools, in the tab the user handed to it by clicking the Recordful icon (and only that tab, or the one being recorded). It draws its own cursor, glides it to each target, highlights clicks and types at a human pace, so the video looks like a person using the app. Agents that have a browser tool of their own can use that instead.
 - The extension dials **out** to the bridge, because an MV3 service worker can't listen on a socket. The bridge binds to loopback only.
 - Agent-triggered actions go through the same code paths as Recordful's keyboard shortcuts, so the user's saved settings and every built-in check still apply.
 
@@ -31,8 +31,18 @@ recordful-mcp  ── WebSocket on 127.0.0.1:47823, mutual HMAC handshake ──
 | `pause_recording` / `resume_recording` | Pauses and resumes recording, so the agent's thinking time doesn't end up in the video |
 | `stop_recording` | Stops the recording; Recordful opens its editor and the tool returns the editor tab |
 | `probe_capture` | Diagnostic: can the extension capture this tab right now without a click? |
+| `navigate` | Opens an http(s) URL in the handed-over tab and waits for it to load |
+| `snapshot` | Lists the interactive elements and headings, each with a ref (`e12`), role, accessible name, value/state and bounding box |
+| `click` | Moves Recordful's visible cursor to the element and clicks it, with a click highlight; reports a navigation it started |
+| `type` | Clicks a text field and types into it at a human pace (or picks an option in a `<select>`) |
+| `press` | Presses a key (Enter, Tab, Escape, arrows, `Shift+Tab`, `Control+a`, …) and performs its usual effect |
+| `scroll` | Scrolls an element into view, or the page (or the panel under the cursor) in a direction |
+| `wait_for` | Waits for text to appear, or an element to become visible or go away; survives navigations |
+| `screenshot` | Returns what the tab shows right now as an image |
 
-The server also sends MCP `instructions` that teach the agent the record-a-feature workflow.
+The server also sends MCP `instructions` that teach the agent the record-a-feature workflow: plan, ask the user to click the Recordful icon on the tab, navigate to the start, `start_recording`, act with the page tools, `pause_recording` while thinking, `stop_recording`.
+
+Page tools use synthetic DOM events. Links, buttons, checkboxes, form fields and form submits work; native dropdown popups, file pickers and actions that need a real user gesture (pop-ups, clipboard) don't, and iframes aren't covered. See [docs/protocol.md](docs/protocol.md#page-methods).
 
 ## Quick start (development)
 
@@ -93,7 +103,7 @@ claude mcp add recordful -- node /absolute/path/to/recordful-agent-bridge/dist/c
 }
 ```
 
-Any other client that launches local stdio MCP servers works the same way. Agents without a browser tool can control the recorder today. Clicking through the feature by themselves needs the Phase 1 page tools; see [docs/roadmap.md](docs/roadmap.md). Cloud-only apps (claude.ai or ChatGPT connectors in the browser) need the hosted server; see [docs/remote-mcp.md](docs/remote-mcp.md).
+Any other client that launches local stdio MCP servers works the same way, including agents with no browser tool: the page tools let them click through the feature themselves. Cloud-only apps (claude.ai or ChatGPT connectors in the browser) need the hosted server; see [docs/remote-mcp.md](docs/remote-mcp.md).
 
 Test it without an MCP client:
 
@@ -127,9 +137,10 @@ Only one process can own the port. If two MCP clients each launch `recordful-mcp
 npm run check      # typecheck + unit/integration tests
 npm run dev        # run the CLI from source (tsx)
 node scripts/live-spike.mjs --extension ../recordful/build --out spike-out --channel msedge
+node scripts/live-spike.mjs --extension ../recordful/build --out spike-out --channel msedge --pages --port 47824
 ```
 
-`scripts/live-spike.mjs` loads the real extension build in a throwaway profile and drives it through the real bridge. Branded Chrome ignores `--load-extension` (v137+), so it uses Playwright's Chromium or Microsoft Edge.
+`scripts/live-spike.mjs` loads the real extension build in a throwaway profile and drives it through the real bridge. Branded Chrome ignores `--load-extension` (v137+), so it uses Playwright's Chromium or Microsoft Edge. `--pages` exercises every page tool against a local test page, attempting a tab recording first; `--port` runs its bridge on another port (and points the extension at it) when an MCP client's bridge already holds 47823.
 
 ## Repository layout
 
@@ -141,10 +152,10 @@ src/
   auth/                   pairing token storage, HMAC challenge-response
   bridge/                 WebSocket server, session/heartbeat/request lifecycle, port supervision
   mcp/                    MCP tool definitions
-  protocol/               wire messages (zod), method names, error codes
-test/                     vitest: handshake/security, request lifecycle, MCP tools, config/token
+  protocol/               wire messages (zod), method names, page-tool params, error codes
+test/                     vitest: handshake/security, request lifecycle, MCP and page tools, config/token
 scripts/live-spike.mjs    end-to-end check against a real extension build
-docs/                     protocol, Phase 0 findings, roadmap, hosted MCP plan
+docs/                     protocol, Phase 0 and Phase 1 findings, roadmap, hosted MCP plan
 ```
 
 The extension side lives in the Recordful repo at `src/pages/Background/agentBridge/` and is compiled in only when `RECORDFUL_AGENT_BRIDGE=1` is set for a development build. See [docs/protocol.md](docs/protocol.md#extension-adapter).

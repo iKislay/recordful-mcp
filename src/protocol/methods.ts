@@ -9,6 +9,15 @@ export const Method = {
   RecordingPause: "recording.pause",
   RecordingResume: "recording.resume",
   CaptureProbe: "capture.probe",
+  // Page tools: act on the tab the user handed to Recordful (see page.ts).
+  PageNavigate: "page.navigate",
+  PageSnapshot: "page.snapshot",
+  PageClick: "page.click",
+  PageType: "page.type",
+  PagePress: "page.press",
+  PageScroll: "page.scroll",
+  PageWaitFor: "page.waitFor",
+  PageScreenshot: "page.screenshot",
 } as const;
 export type Method = (typeof Method)[keyof typeof Method];
 

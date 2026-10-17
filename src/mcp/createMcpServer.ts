@@ -10,6 +10,7 @@ import type { BridgeConfig } from "../config.js";
 import type { Logger } from "../logger.js";
 import { BridgeError, ErrorCode } from "../protocol/errors.js";
 import { Method } from "../protocol/methods.js";
+import { pageExtraWaitMs, pageParams, parsePageParams, type PageMethod } from "../protocol/page.js";
 
 export interface McpServerDeps {
   bridge: BridgeServer;
@@ -20,17 +21,20 @@ export interface McpServerDeps {
 }
 
 const INSTRUCTIONS = `
-Recordful records the user's browser so you can produce product demo videos.
+Recordful records the user's browser so you can produce product demo videos. It can also drive the page it records, so you don't need a browser tool of your own.
 
 Typical flow for "record feature X":
-1. Plan the walkthrough first (which page, which clicks, in what order). Navigate to the starting page with your browser tool BEFORE recording.
-2. Ask the user to click the Recordful toolbar icon on that tab. Chrome only lets an extension capture a tab after the user has invoked it there, and the same click connects Recordful to you. Nothing can do this click for them.
-3. Call get_status. It confirms the connection and reports the recording mode the user picked in Recordful (tab area, screen, camera) and whether a recording is already running.
-4. Call start_recording. It uses the user's saved Recordful settings (mode, mic, camera, countdown) and returns once capture is live.
-5. Perform the walkthrough with your browser tool at a human pace. Call pause_recording before long pauses to think and resume_recording before acting again, so the video has no dead air.
-6. Call stop_recording. Recordful opens its editor with the recording automatically.
+1. Plan the walkthrough first: which page, which clicks, what to type, in what order.
+2. Ask the user to click the Recordful toolbar icon on the tab to record. That click hands the tab to you: Chrome only lets an extension capture a tab after the user has invoked it there, and the same click connects Recordful to you. Nothing can do this click for them. Page tools only ever act on that tab.
+3. Call get_status. It confirms the connection, shows the tab you were handed (recorder.agent.armedTab), and reports the recording mode the user picked in Recordful (tab area, screen, camera) and whether a recording is already running.
+4. Get to the starting page before recording: navigate(url), then snapshot() to check it loaded.
+5. Call start_recording. It uses the user's saved Recordful settings (mode, mic, camera, countdown) and returns once capture is live.
+6. Walk through the feature with the page tools: snapshot() lists the interactive elements with refs ("e12"), then click(ref), type(ref, text), press(key), scroll(...), wait_for(...). Recordful moves a visible cursor to each target and types at a human pace, so the video looks like a person using the app. Take a fresh snapshot after anything that changes the page; refs from before a navigation stop working.
+7. Call pause_recording before you stop to think or plan the next steps, and resume_recording right before acting again, so the video has no dead air. snapshot and screenshot work while paused.
+8. Call stop_recording. Recordful opens its editor with the recording automatically.
 
-If a tool reports NOT_CONNECTED, or start_recording returns outcome "pending", the user hasn't clicked the Recordful icon on the tab yet: ask them to, then retry.
+If a tool reports NOT_CONNECTED or NOT_ARMED, or start_recording returns outcome "pending", the user hasn't clicked the Recordful icon on the tab yet: ask them to, then retry.
+If you have a browser tool of your own you can use it for the walkthrough instead, but Recordful's page tools make smoother videos.
 "screen" mode always shows Chrome's screen picker, which the user must answer.
 `.trim();
 
@@ -204,6 +208,126 @@ export const createMcpServer = (deps: McpServerDeps): McpServer => {
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
     handle(async ({ tabId }: { tabId?: number }) => call(Method.CaptureProbe, { tabId })),
+  );
+
+  // ---- page tools ----------------------------------------------------------
+  // The extension performs these in the tab the user handed it, so agents
+  // without a browser tool can do the walkthrough themselves.
+
+  const pageCall = async (method: PageMethod, args: unknown): Promise<unknown> => {
+    const params = parsePageParams(method, args) as Record<string, unknown>;
+    try {
+      return await call(method, params, pageExtraWaitMs(method, params));
+    } catch (err) {
+      if (err instanceof BridgeError && err.code === ErrorCode.UnknownMethod) {
+        throw new BridgeError(err.code, err.message, {
+          hint: "This Recordful build predates page tools. Rebuild it with `npm run build:agent` and reload the extension.",
+        });
+      }
+      throw err;
+    }
+  };
+
+  const pageTool = (
+    name: string,
+    method: PageMethod,
+    title: string,
+    description: string,
+    annotations: { readOnlyHint: boolean },
+  ) =>
+    server.registerTool(
+      name,
+      {
+        title,
+        description,
+        inputSchema: pageParams[method],
+        annotations: { destructiveHint: false, idempotentHint: false, openWorldHint: true, ...annotations },
+      },
+      handle(async (args: unknown) => pageCall(method, args)),
+    );
+
+  pageTool(
+    "navigate",
+    Method.PageNavigate,
+    "Open a URL",
+    "Open an http(s) URL in the tab the user handed to Recordful and wait for it to load. Returns the final URL and title. Refs from earlier snapshots stop working.",
+    { readOnlyHint: false },
+  );
+
+  pageTool(
+    "snapshot",
+    Method.PageSnapshot,
+    "List page elements",
+    "List the interactive elements (links, buttons, fields, checkboxes, tabs, menu items) and headings in the recorded tab, each with a ref to pass to click/type/scroll/wait_for, its role, accessible name, current value or state, and bounding box in CSS pixels. Refs stay the same for an element while it stays on the page.",
+    { readOnlyHint: true },
+  );
+
+  pageTool(
+    "click",
+    Method.PageClick,
+    "Click an element",
+    "Move Recordful's visible cursor to the element, scrolling it into view if needed, and click it, with a click highlight in the video. Reports a navigation the click started. Fails with ELEMENT_OBSCURED (naming what is on top, with its ref) if something covers it.",
+    { readOnlyHint: false },
+  );
+
+  pageTool(
+    "type",
+    Method.PageType,
+    "Type into a field",
+    "Click the field, then type the text at a human pace (text inputs, text areas, content-editable areas). Set clear to replace what is already there. Use press for Enter, Tab and other keys.",
+    { readOnlyHint: false },
+  );
+
+  pageTool(
+    "press",
+    Method.PagePress,
+    "Press a key",
+    "Press a key in the focused element, e.g. Enter to submit a form, Tab to move focus, Escape to close a dialog, ArrowDown in a menu, Shift+Tab, Control+a. Recordful also performs the key's usual effect (submitting, moving focus, deleting), since pages ignore synthetic keys otherwise.",
+    { readOnlyHint: false },
+  );
+
+  pageTool(
+    "scroll",
+    Method.PageScroll,
+    "Scroll",
+    "Scroll smoothly: either bring an element (ref) into view, or scroll the page in a direction, by amount pixels or most of a screen.",
+    { readOnlyHint: false },
+  );
+
+  pageTool(
+    "wait_for",
+    Method.PageWaitFor,
+    "Wait for the page",
+    'Wait until text appears on the page or an element (ref) becomes visible, or with state "hidden" until it goes away. Keeps waiting across navigations. Fails with WAIT_TIMEOUT if it doesn\'t happen in time.',
+    { readOnlyHint: true },
+  );
+
+  server.registerTool(
+    "screenshot",
+    {
+      title: "Screenshot the page",
+      description:
+        "Capture what the recorded tab shows right now, as an image, to check the page looks right. The tab must be the active tab of its window.",
+      inputSchema: pageParams[Method.PageScreenshot],
+      annotations: { readOnlyHint: true, openWorldHint: true },
+    },
+    async (args: unknown): Promise<CallToolResult> => {
+      try {
+        const shot = (await pageCall(Method.PageScreenshot, args)) as Record<string, unknown> | null;
+        const { data, mimeType, ...meta } = shot ?? {};
+        if (typeof data !== "string" || typeof mimeType !== "string") {
+          throw new BridgeError(ErrorCode.Internal, "The extension returned no image.");
+        }
+        return {
+          content: [
+            { type: "image", data, mimeType },
+            { type: "text", text: JSON.stringify(meta, null, 2) },
+          ],
+        };
+      } catch (err) {
+        return failure(err);
+      }
+    },
   );
 
   return server;
