@@ -43,6 +43,8 @@ recordful.app (better-auth) issues and validates the OAuth tokens
 5. **Operations.** Per-user rate limits, an audit log of agent actions on the account page, a revoke-all button, and alerts on relay errors.
 6. **Publish.** Users add `https://mcp.recordful.app/mcp` as a custom connector (in claude.ai under Settings → Connectors, and similarly in ChatGPT). Later, apply to each vendor's connector directory.
 
+The detailed design and phased plan are in [hosted-connector.md](hosted-connector.md).
+
 ## Before building it
 
 Ship Phase 1 page tools first (see [roadmap.md](roadmap.md)). They're what let a cloud chat app with no browser of its own record a walkthrough at all, and the hosted server mainly multiplies their reach.
