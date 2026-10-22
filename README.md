@@ -14,7 +14,12 @@ You need Chrome and [Node.js](https://nodejs.org) 20.10 or newer. The Claude Des
 
 **1. Install [Recordful from the Chrome Web Store](https://chromewebstore.google.com/detail/hkcgjbkibidgbefehehenlmhjanjaopc).**
 
-**2. Add the server to your AI app:**
+**2. Add Recordful to your AI app.** The fastest ways:
+
+- **Let the AI do it.** Run `npx -y recordful-mcp prompt` (or copy it from the [help center](https://help.recordful.app/docs/ai-agents/setup-prompt)) and paste the result into your AI app. It installs the server and skill for itself, tells you what needs a restart, and asks what to record first.
+- **One command.** `npx -y recordful-mcp install --target claude` (also `cursor`, `codex`, `opencode`, `vscode`, `windsurf`, `gemini`) shows what it would change; add `--yes` to apply. It merges into the app's own config and never replaces your other servers.
+
+Or add it by hand:
 
 <details open>
 <summary><b>Claude Code</b></summary>
@@ -85,7 +90,7 @@ args = ["-y", "recordful-mcp"]
 
 **3. First recording (one-time setup):**
 
-1. In Recordful's popup, click **More → AI agents** and turn it on.
+1. In Recordful's popup, click **More → AI agents** and turn it on. Chrome asks to allow screen recording once; click **Allow**.
 2. Ask your AI to record something. When it asks, click the **Recordful icon** on the tab.
 3. Recordful asks you to approve the app. If the 4-digit code matches the one your AI shows, click **Allow**.
 
@@ -124,7 +129,7 @@ npx -y recordful-mcp transcript > transcript.txt
 npx -y recordful-mcp videos
 ```
 
-The first command asks you to click the Recordful icon once; a small helper keeps the connection for later commands and exits after 30 idle minutes. Add `--json` for machine-readable output. All commands: `npx -y recordful-mcp --help`.
+The first command asks you to click the Recordful icon once; a small helper keeps the connection for later commands and exits after 30 idle minutes. Add `--json` for machine-readable output. All commands: `npx -y recordful-mcp --help`; `npx -y recordful-mcp guide --json` lists everything an agent needs to know.
 
 **Why the click?** Chrome only lets an extension record a tab after you click it there, and no app can click for you. The click also marks the only tab the AI may act in.
 
@@ -151,7 +156,7 @@ Details: [SECURITY.md](https://github.com/iKislay/recordful-mcp/blob/main/SECURI
 | --- | --- |
 | "Recordful isn't connected" | Click the Recordful icon on the tab. Still nothing? Check **More → AI agents** is on |
 | The AI shows a code | Check it matches in Recordful's window, click **Allow**, tell the AI to continue |
-| Recording won't start | Click the Recordful icon on the exact tab to record, then retry |
+| Recording won't start | Click the Recordful icon on the exact tab to record, then retry. `PERMISSIONS_NEEDED`: turn AI agents off and on in Recordful and click **Allow** |
 | Recording waits forever | Recordful may be asking something (microphone access, or the screen picker in screen mode). Answer it |
 | `PRO_REQUIRED` or `NOT_SIGNED_IN` | Uploads and transcripts need a Recordful Pro account, signed in in Recordful. Recording works on every plan |
 | `BRIDGE_UNAVAILABLE` | Something other than recordful-mcp is using port 47823, or an older recordful-mcp is running. Update or close it |

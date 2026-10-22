@@ -42,6 +42,7 @@ First connection on a computer:
 - NOT_CONNECTED: ask the user to click the Recordful icon. If that doesn't connect, they need to turn on AI agents in Recordful once (Recordful popup → More → AI agents, or paste chrome-extension://hkcgjbkibidgbefehehenlmhjanjaopc/agents.html into Chrome's address bar).
 - PAIRING_PENDING: Recordful opened a window asking the user to approve you. Tell them the 4-digit code from the error so they can check it matches, ask them to click Allow, then retry. This happens once per computer.
 - PAIRING_DENIED: the user declined. Don't retry unless they ask.
+- PERMISSIONS_NEEDED: Recordful's one-time browser permission to record hasn't been granted. Tell the user to turn AI agents off and on again in Recordful (popup → More → AI agents) and click Allow, then retry.
 - NOT_ARMED, or start_recording returning outcome "pending": the user hasn't clicked the Recordful icon on that tab yet. Ask them to, then retry.
 - NOT_SIGNED_IN or PRO_REQUIRED: uploads and transcripts need the user signed in to Recordful Pro. Relay the error's message (it says what still works); don't retry.
 

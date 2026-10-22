@@ -40,6 +40,11 @@ Page tools use synthetic browser events. Links, buttons, checkboxes, form fields
 ```text
 npx -y recordful-mcp                       run the MCP server (what AI apps start)
 npx -y recordful-mcp setup                 print the setup snippet for each AI app
+npx -y recordful-mcp install --target <app> [--component all|mcp|skill] [--yes]
+                                           add the server (and skill) to one AI app's config: claude, cursor, codex,
+                                           opencode, vscode, windsurf, gemini. A dry run unless --yes; merges, never replaces
+npx -y recordful-mcp prompt                print the paste-into-any-AI setup prompt
+npx -y recordful-mcp guide --json          tools, commands, error codes, plans and safety rules for agents
 npx -y recordful-mcp start [--tab <id>]    start recording (click the Recordful icon on the tab first)
 npx -y recordful-mcp pause | resume | stop
 npx -y recordful-mcp recordings            recordings saved on this computer

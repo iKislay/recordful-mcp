@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.0 (2026-10-22)
+
+Set up in one step, from any AI app.
+
+- **`recordful-mcp install --target <app>`** adds the server (and, for Claude Code, Cursor and Codex, the `record-demo` skill) to one AI app's own configuration: `claude`, `cursor`, `codex`, `opencode`, `vscode`, `windsurf` or `gemini`. It's a dry run until `--yes`, merges instead of replacing, leaves a config it can't parse alone (with the entry to add by hand), and says whether the app needs a restart.
+- **`recordful-mcp prompt`** prints a prompt to paste into any AI app so it installs and verifies Recordful for itself, reports the paths it wrote, lists the few steps only the user can do in Chrome, and then asks what to record. Also on the help center.
+- **`recordful-mcp guide --json`**: tools, commands, error codes, exit codes, plans and safety rules in one document, so an agent reads the installed contract instead of guessing. Skills and the prompt tell agents to use Recordful's tools or CLI, never their own browser, to record.
+- **First recording no longer fails on a new install.** Recordful needs three browser permissions the first time it records, and Chrome only asks on a click, so an agent's first start used to fail with a vague `START_FAILED`. Turning on AI agents now asks for them, and `start_recording` returns `PERMISSIONS_NEEDED` straight away, with what to tell the user, if they're still missing. (Needs Recordful 4.6.19.)
+- The skill has a Rules section (ask before recording and before uploading, test data only, never ask for a secret) and a command-line fallback for sessions where the MCP tools aren't loaded yet.
+
 ## 0.4.0 (2026-10-22)
 
 Record, upload and read back: coding assistants can now share a demo and check what was said, on their own, from MCP or a shell.

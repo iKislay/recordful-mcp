@@ -8,6 +8,8 @@ npm run dev          # run the CLI from source
 npm run pack:mcpb    # build recordful.mcpb for Claude Desktop
 ```
 
+`src/skill.ts` is generated from `plugin/skills/record-demo/SKILL.md`: run `node scripts/sync-skill.mjs` after editing the skill (a test fails if they differ). The help center's setup-prompt page is generated from `src/setupPrompt.ts`: `npm run build && node scripts/sync-help-prompt.mjs ../recordful-help`.
+
 ## Live end-to-end tests
 
 These drive a real Recordful build in a throwaway browser profile. They need a development build of Recordful next to this repo (`npm run build:agent` there) and Playwright from that repo. Branded Chrome ignores `--load-extension` since v137, so use Playwright's Chromium or `--channel msedge`.

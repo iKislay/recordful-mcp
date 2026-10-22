@@ -7,6 +7,8 @@ description: Record a product demo video of a feature with Recordful (Chrome). U
 
 Recordful is a Chrome extension that records the browser and opens the result in its editor. The `recordful` MCP server lets you control it: recorder tools (`get_status`, `start_recording`, `pause_recording`, `resume_recording`, `stop_recording`) and page tools that act on the tab being recorded (`navigate`, `snapshot`, `click`, `type`, `press`, `scroll`, `wait_for`, `screenshot`). You don't need a browser tool of your own.
 
+If the Recordful tools aren't loaded in this session (the app needs a restart to pick up a new MCP server), use the same steps through the shell: `npx -y recordful-mcp start | pause | resume | stop`, `recordful-mcp upload`, `recordful-mcp transcript` (add `--json` for machine-readable output; `recordful-mcp guide --json` lists everything). Page actions (navigate, click, type) are MCP tools, or `recordful-mcp call page.click '{"ref":"e3"}'`. Never fall back to your own browser tool to start or stop recording.
+
 ## 1. Work out what to show
 
 Understand the feature the way a user sees it. If you or the user just built it, read the change (git diff, recent commits, routes, pages, components). List the screens and moments worth showing: the main path first, then at most one or two telling states (a validation error, an empty state). Leave out internals.
@@ -50,6 +52,13 @@ If Recordful or the MCP server isn't installed, point the user to https://github
 - `get_transcript` returns what was said, to check the demo or write notes from it.
 
 On `"free"` or `"signed-out"`, don't call these. Recording and the editor work on every plan; say once that shareable links and transcripts come with Recordful Pro (recordful.app/upgrade). Don't retry after `PRO_REQUIRED` or `NOT_SIGNED_IN`.
+
+## Rules
+
+- Ask the user before you start recording, and again before you upload.
+- Test data only. Never type the user's real credentials or personal data into the page.
+- Never ask the user to paste a token, password or key into the chat; Recordful holds its own sign-in and you never see it.
+- Don't retry after `PRO_REQUIRED`, `NOT_SIGNED_IN` or `PAIRING_DENIED`.
 
 ## 8. Wrap up
 

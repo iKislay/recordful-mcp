@@ -10,12 +10,15 @@ import { BridgeAgent } from "./bridge/BridgeAgent.js";
 import { appDisplayName } from "./clientNames.js";
 import { loadConfig, type BridgeConfig } from "./config.js";
 import { createLogger, type Logger } from "./logger.js";
+import { guide } from "./guide.js";
+import { COMPONENTS, install, isComponent, isTarget, TARGET_NAMES, TARGETS } from "./install.js";
 import { createMcpServer } from "./mcp/createMcpServer.js";
 import { BridgeError, ErrorCode } from "./protocol/errors.js";
 import { isMethod, Method, METHODS } from "./protocol/methods.js";
 import { isPageMethod, pageExtraWaitMs, parsePageParams } from "./protocol/page.js";
 import { VISIBILITIES } from "./protocol/video.js";
 import { setupGuide } from "./setupGuide.js";
+import { SETUP_PROMPT } from "./setupPrompt.js";
 import { getVideoAndWait, mb, transcriptAndWait, uploadAndWait, type Call } from "./workflows.js";
 
 const { version } = createRequire(import.meta.url)("../package.json") as { version: string };
@@ -24,7 +27,12 @@ const HELP = `recordful-mcp ${version}: let any AI app record, upload and read b
 
 Usage:
   recordful-mcp                        Run the MCP server on stdio (what AI apps start)
-  recordful-mcp setup                  How to add Recordful to Claude, Cursor, VS Code, opencode and others
+  recordful-mcp install --target <app> [--component all|mcp|skill] [--yes] [--json]
+                                       Add Recordful (server + skill) to one AI app's own configuration.
+                                       <app>: ${TARGETS.join(", ")}. Without --yes it only shows what it would change.
+  recordful-mcp setup                  Setup steps for every AI app, as text
+  recordful-mcp prompt                 A prompt to paste into any AI app so it sets Recordful up itself
+  recordful-mcp guide --json           Everything an AI agent needs to know about this install
 
 Recording (click the Recordful icon on the tab first):
   recordful-mcp start [--tab <id>]     Start recording with your Recordful settings
@@ -251,6 +259,38 @@ const statusCommand = async (config: BridgeConfig, logger: Logger, json: boolean
   });
 };
 
+const installCommand = (args: string[]) => {
+  const { flags } = parseArgs(args);
+  const json = flags.json === true;
+  const target = flags.target;
+  if (!isTarget(target)) {
+    throw new BridgeError(ErrorCode.InvalidParams, `install needs --target <app>, one of: ${TARGETS.join(", ")}`);
+  }
+  const component = flags.component ?? "all";
+  if (!isComponent(component)) {
+    throw new BridgeError(ErrorCode.InvalidParams, `--component must be one of: ${COMPONENTS.join(", ")}`);
+  }
+  const result = install(target, { apply: flags.yes === true, component });
+  show(json, result, () => {
+    out(`${result.applied ? "Added Recordful to" : "Would add Recordful to"} ${TARGET_NAMES[target]}:`);
+    for (const c of result.changes) {
+      const where = c.path ?? c.command ?? "";
+      const done = result.applied;
+      const verb: Record<string, string> = {
+        unchanged: "already set up",
+        manual: "needs you",
+        run: done ? "ran" : "would run",
+        create: done ? "created" : "would create",
+        update: done ? "updated" : "would update",
+      };
+      out(`  ${c.component === "mcp" ? "MCP server" : "Skill     "}  ${verb[c.action]}  ${where}`);
+      if (c.detail) out(`    ${c.detail.split("\n").join("\n    ")}`);
+    }
+    if (!result.applied) out("Nothing was written. Add --yes to apply.");
+    else out(result.restart);
+  });
+};
+
 const unpairCommand = async (config: BridgeConfig, args: string[]) => {
   const [target] = args;
   if (!target) throw new BridgeError(ErrorCode.InvalidParams, "unpair needs an extension ID (see `recordful-mcp status`) or --all");
@@ -429,6 +469,12 @@ const main = async () => {
       return daemon(config, logger);
     case "setup":
       return void process.stdout.write(setupGuide());
+    case "prompt":
+      return void process.stdout.write(SETUP_PROMPT);
+    case "guide":
+      return void out(JSON.stringify(guide(version), null, 2));
+    case "install":
+      return installCommand(rest);
     case "unpair":
       return unpairCommand(config, rest);
     case "status": {
