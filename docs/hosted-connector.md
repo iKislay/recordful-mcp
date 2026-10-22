@@ -83,16 +83,22 @@ export interface McpServerDeps {
 - `RelayTransport` (in `hosted/`) is constructed per MCP request with the caller's user id and OAuth client, and calls the user's Durable Object over RPC.
 - `copy` exists because the text differs: local talks about pairing codes and `localhost`; hosted talks about "Allow cloud AI apps", signing in to the same Recordful account, per-app approval, and that **the app being demoed must be reachable from the user's browser** (a preview or production URL, not `localhost` inside a cloud sandbox such as Claude Code on the web). Shared paragraphs live in one place and are composed.
 
-### Layout
+### Layout (as built in Phase 1)
 
 ```
-src/core/      createMcpServer.ts, transport.ts, copy.ts, protocol/{errors,messages,methods,page}.ts
-               no node:* imports (enforced by a test that greps the folder, or an eslint rule)
-src/local/     BridgeServer, keepBound, pairings, handshake, cli, LocalTransport
-hosted/        Cloudflare Worker: its own package.json + wrangler.jsonc, imports ../src/core
+src/core/      createRecordfulServer.ts (every tool + the record_feature prompt), transport.ts
+               (RecorderTransport, ServerCopy, Timeouts), videoTools.ts
+src/protocol/, src/workflows.ts
+               also runtime-agnostic: the core imports them
+src/mcp/       createMcpServer.ts: the local server = core + localTransport (over Bridge) + the local copy
+src/bridge/, src/auth/, src/cli.ts ...
+               Node-only, unchanged
+hosted/        Cloudflare Worker (Phase 3): its own package.json + wrangler.jsonc, imports ../src/core
 ```
 
-The npm package keeps its name, bin and behaviour. The refactor ships alone, as a no-behaviour-change release, before anything hosted exists, and the existing 57 tests must pass unchanged (plus a `FakeTransport` test that runs every tool through the core).
+`test/core.test.ts` enforces the boundary: no `node:` imports or Node globals in the core files, and their runtime imports stay inside that set (type-only imports, like `Logger`, may point anywhere). It also runs the tools through a fake transport with hosted-style copy.
+
+The design first proposed moving `bridge/`, `auth/` and `cli.ts` under `src/local/`. That was dropped: it would move the published bin path and break doc links for no gain, since 0.4 already put a `Bridge` interface in front of BridgeServer/BridgeAgent/PeerClient. `src/mcp/createMcpServer.ts` keeps its exports (`createMcpServer`, `McpServerDeps`, `recordFeaturePrompt`), so `cli.ts` and the existing tests didn't change.
 
 ### SDK version
 

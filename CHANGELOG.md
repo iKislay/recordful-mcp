@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Internal: the MCP tools and prompt now live in a transport-agnostic core (`src/core`) behind a `RecorderTransport` interface, so the coming hosted connector (mcp.recordful.app) can serve the same tools. No change for users: same tools, instructions, prompt and results.
+
 ## 0.5.0 (2026-10-22)
 
 Set up in one step, from any AI app.

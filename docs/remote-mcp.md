@@ -25,7 +25,7 @@ mcp.recordful.app ── routes by user id ──► that user's Recordful exten
 recordful.app (better-auth) issues and validates the OAuth tokens
 ```
 
-- The tools are the same as the local server. The core in `src/mcp/createMcpServer.ts` is split out behind a `RecorderTransport` interface: locally that's `BridgeServer`, and when hosted it's the per-user relay.
+- The tools are the same as the local server. The core in `src/core/createRecordfulServer.ts` sits behind a `RecorderTransport` interface: locally that's the loopback bridge (`src/mcp/localTransport.ts`), and when hosted it's the per-user relay.
 - The extension connects only when the user has turned on "Allow AI agents" in Recordful's settings. The connection is per user and authenticated with the user's existing Recordful token, and an "Agent is controlling Recordful" badge shows while it's active.
 - The click-to-arm rule still applies. Chrome requires a click on the Recordful icon before tab capture, wherever the agent runs.
 
