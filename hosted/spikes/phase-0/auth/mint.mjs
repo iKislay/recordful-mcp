@@ -1,0 +1,14 @@
+import { createHash, randomBytes } from "node:crypto";
+const AS = "http://127.0.0.1:4100", API = AS + "/api/auth", R = "http://127.0.0.1:4200/mcp";
+let cookie = "";
+const call = async (u, i = {}) => { const r = await fetch(u, { redirect: "manual", ...i, headers: { origin: AS, ...(cookie ? { cookie } : {}), ...(i.headers || {}) } }); const s = r.headers.getSetCookie(); if (s.length) cookie = s.map((c) => c.split(";")[0]).join("; "); return r; };
+const J = { "content-type": "application/json" };
+await call(API + "/sign-up/email", { method: "POST", headers: J, body: JSON.stringify({ email: `m${Date.now()}@example.com`, password: "spike-password-123", name: "M" }) });
+const reg = await (await call(API + "/oauth2/register", { method: "POST", headers: J, body: JSON.stringify({ client_name: "M", redirect_uris: ["http://127.0.0.1:9999/cb"], token_endpoint_auth_method: "none" }) })).json();
+const v = randomBytes(32).toString("base64url"), c = createHash("sha256").update(v).digest("base64url");
+const q = new URLSearchParams({ response_type: "code", client_id: reg.client_id, redirect_uri: "http://127.0.0.1:9999/cb", scope: "openid recording:control", state: "s", code_challenge: c, code_challenge_method: "S256", resource: R });
+const a = await (await call(API + "/oauth2/authorize?" + q)).json();
+const cons = await (await call(API + "/oauth2/consent", { method: "POST", headers: J, body: JSON.stringify({ accept: true, oauth_query: a.url.split("?")[1] }) })).json();
+const code = new URL(cons.url).searchParams.get("code");
+const t = await (await call(API + "/oauth2/token", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ grant_type: "authorization_code", code, redirect_uri: "http://127.0.0.1:9999/cb", client_id: reg.client_id, code_verifier: v, resource: R }) })).json();
+process.stdout.write(t.access_token);

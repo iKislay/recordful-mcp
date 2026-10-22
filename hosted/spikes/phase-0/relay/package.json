@@ -1,0 +1,18 @@
+{
+  "name": "recordful-hosted-spike-relay",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --port 8787 --ip 127.0.0.1",
+    "test": "node client-test.mjs",
+    "hold": "node hold.mjs"
+  },
+  "dependencies": {
+    "@better-auth/mcp": "1.7.12",
+    "@better-auth/oauth-provider": "1.7.12",
+    "better-auth": "1.7.12",
+    "jose": "^6.2.13",
+    "ws": "^8.22.0"
+  },
+  "devDependencies": { "wrangler": "4.151.3" }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "recordful-hosted-spike-auth",
+  "private": true,
+  "type": "module",
+  "scripts": { "servers": "node servers.mjs", "flow": "node flow.mjs" },
+  "dependencies": {
+    "@better-auth/cimd": "1.7.12",
+    "@better-auth/mcp": "1.7.12",
+    "@better-auth/oauth-provider": "1.7.12",
+    "better-auth": "1.7.12",
+    "jose": "^6.2.13"
+  }
+}

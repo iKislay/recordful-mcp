@@ -1,0 +1,7 @@
+{
+  "name": "recordful-relay-spike",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-01",
+  "durable_objects": { "bindings": [{ "name": "USER_RELAY", "class_name": "UserRelay" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["UserRelay"] }]
+}
