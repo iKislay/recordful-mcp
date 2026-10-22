@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.4.0 (2026-10-22)
+
+Record, upload and read back: coding assistants can now share a demo and check what was said, on their own, from MCP or a shell.
+
+- **Uploads** (`upload_recording`, Recordful Pro): uploads a local recording to recordful.app with the same steps as the web editor, signed in as the user through the extension (no credential ever reaches the agent), and waits until it's up. Never uploads the same recording twice unless `force`. Cloud recordings are recognised and returned as already uploading.
+- **Transcripts** (`get_transcript`, Recordful Pro): starts transcription on first use and waits for it, including for an upload still in progress; returns `text`, `vtt` or both.
+- **Videos**: `get_video` (links and upload stage, optionally waiting until ready), `list_videos`, `list_recordings` (local recordings). `stop_recording` now says where the recording went: a cloud video with its links, or a local recording to upload.
+- **Clear about plans**: `get_status` reports `plan` (`pro`, `free`, `signed-out`, `unavailable`). On other plans, uploads and transcripts fail at once with `PRO_REQUIRED` or `NOT_SIGNED_IN`, saying what still works (recording, page tools, the editor) and linking the upgrade page; the agent instructions, prompt and skill tell agents to check first and not retry.
+- **A real CLI**: `start`, `pause`, `resume`, `stop`, `recordings`, `upload`, `videos`, `video`, `transcript`, `status`, each with readable output or `--json`. The first command starts a small background helper that holds Recordful's connection, so the user clicks the Recordful icon once.
+- **Any number of AI apps at once**: a second recordful-mcp (another AI app, or the CLI) shares the first one's connection over an authenticated local peer channel, and takes the port over when the owner exits. `BRIDGE_UNAVAILABLE` now only means something else holds the port.
+- MCP progress notifications while uploads and transcripts wait.
+- Fixed: two recordful-mcp processes creating the pairing file at the same moment could disagree on the server's identity.
+- Tests: 112, including the real CLI end to end and peer takeover. Verified live against recordful.app's stack: a spoken recording uploaded, transcribed and read back through both the CLI and MCP; free and signed-out accounts get clear answers.
+- Needs Recordful 4.6.19 or newer (with the upload and transcript methods) and recordful.app with `GET /videos/:id/transcript?text=1`.
+
 ## 0.3.0 (2026-10-17)
 
 Ready for everyone: install with one line in any AI app, pair with one click, no tokens or builds.

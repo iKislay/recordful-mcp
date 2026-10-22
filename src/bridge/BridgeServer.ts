@@ -12,7 +12,7 @@
 import { randomInt, randomUUID } from "node:crypto";
 import { EventEmitter } from "node:events";
 import { createServer, type IncomingMessage, type Server } from "node:http";
-import type { AddressInfo } from "node:net";
+import type { AddressInfo, Socket } from "node:net";
 import { WebSocket, WebSocketServer, type RawData } from "ws";
 import { computeProof, newNonce, verifyProof } from "../auth/handshake.js";
 import type { PairingStore } from "../auth/pairings.js";
@@ -26,6 +26,10 @@ import {
   CloseCode,
   HandshakeMessage,
   MAX_MESSAGE_BYTES,
+  MAX_PEERS,
+  PEER_PATH,
+  PeerMessage,
+  type PeerCallMessage,
   PROTOCOL_VERSION,
   type ClientInfo,
   type EventMessage,
@@ -43,6 +47,19 @@ export interface BridgeServerOptions {
   pairingTimeoutMs: number;
   heartbeatTimeoutMs: number;
   logger: Logger;
+  // The secret other recordful-mcp processes prove to share this bridge.
+  // Without it, peers are refused.
+  peerSecret?: () => Promise<string>;
+}
+
+// What any recordful-mcp process (the owner here, or a peer forwarding to
+// it) offers the MCP tools and the CLI.
+export interface Bridge {
+  waitForSession(timeoutMs: number): Promise<SessionInfo>;
+  request(method: string, params: Record<string, unknown>, timeoutMs: number): Promise<unknown>;
+  state(): Promise<{ session: SessionInfo | null; pairing: PairingInfo | null }>;
+  setAppName(name: string): void;
+  readonly connection: { mode: "owner" | "peer" | "none"; error: string | null };
 }
 
 export interface PairingInfo {
@@ -104,7 +121,7 @@ export const originToExtensionId = (origin: string | undefined): string | null =
   return match?.[1] ?? null;
 };
 
-export class BridgeServer extends EventEmitter<Events> {
+export class BridgeServer extends EventEmitter<Events> implements Bridge {
   private readonly opts: BridgeServerOptions;
   private readonly log: Logger;
   private http: Server | null = null;
@@ -115,6 +132,9 @@ export class BridgeServer extends EventEmitter<Events> {
   private pairingInProgress: (PairingInfo & { ws: WebSocket }) | null = null;
   private lastDeniedAt = 0;
   private app = "an AI app";
+  private readonly peers = new Set<WebSocket>();
+  // The last time a peer asked for anything, so an idle helper can exit.
+  lastPeerActivityAt = Date.now();
 
   constructor(opts: BridgeServerOptions) {
     super();
@@ -140,6 +160,18 @@ export class BridgeServer extends EventEmitter<Events> {
     if (clean) this.app = clean;
   }
 
+  get connection(): { mode: "owner" | "peer" | "none"; error: string | null } {
+    return { mode: this.listening ? "owner" : "none", error: null };
+  }
+
+  get peerCount(): number {
+    return this.peers.size;
+  }
+
+  async state(): Promise<{ session: SessionInfo | null; pairing: PairingInfo | null }> {
+    return { session: this.currentSession, pairing: this.pairing };
+  }
+
   get pairing(): PairingInfo | null {
     if (!this.pairingInProgress) return null;
     const { ws: _ws, ...info } = this.pairingInProgress;
@@ -158,14 +190,33 @@ export class BridgeServer extends EventEmitter<Events> {
       // Plain HTTP gets nothing useful: no version, no hints for a scanner.
       res.writeHead(426, { "content-type": "text/plain" }).end("Upgrade Required\n");
     });
-    const wss = new WebSocketServer({
-      server: http,
-      path: BRIDGE_PATH,
-      maxPayload: MAX_MESSAGE_BYTES,
-      verifyClient: (info, cb) => this.verifyClient(info.req, cb),
-    });
-    wss.on("connection", (ws, req) => this.onConnection(ws, req));
+    // Two endpoints on one port: the extension, and other recordful-mcp
+    // processes. Routed by hand: ws can't share a server between paths.
+    const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_MESSAGE_BYTES });
+    const peerWss = new WebSocketServer({ noServer: true, maxPayload: MAX_MESSAGE_BYTES });
     wss.on("error", (err) => this.log.error("websocket server error", { err }));
+    peerWss.on("error", (err) => this.log.error("peer websocket server error", { err }));
+    http.on("upgrade", (req: IncomingMessage, socket: Socket, head: Buffer) => {
+      const path = (req.url ?? "").split("?")[0];
+      const refuse = (status: number, text: string) => {
+        socket.end(`HTTP/1.1 ${status} ${text}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`);
+      };
+      if (path === BRIDGE_PATH) {
+        this.verifyClient(req, (ok, code, message) => {
+          if (!ok) return refuse(code ?? 403, message ?? "Forbidden");
+          wss.handleUpgrade(req, socket, head, (ws) => this.onConnection(ws, req));
+        });
+        return;
+      }
+      if (path === PEER_PATH && this.opts.peerSecret) {
+        // Browsers always send Origin; a peer is a local process, never a page.
+        if (req.headers.origin !== undefined) return refuse(403, "Forbidden");
+        if (this.peers.size >= MAX_PEERS) return refuse(503, "Service Unavailable");
+        peerWss.handleUpgrade(req, socket, head, (ws) => this.onPeer(ws));
+        return;
+      }
+      refuse(404, "Not Found");
+    });
 
     await new Promise<void>((resolve, reject) => {
       const onError = (err: NodeJS.ErrnoException) => {
@@ -201,6 +252,8 @@ export class BridgeServer extends EventEmitter<Events> {
     this.heartbeatTimer = null;
     this.dropSession(CloseCode.GoingAway, "bridge shutting down");
     this.abandonPairing("bridge shutting down");
+    for (const peer of this.peers) peer.close(CloseCode.GoingAway, "bridge shutting down");
+    this.peers.clear();
     const wss = this.wss;
     const http = this.http;
     this.wss = null;
@@ -472,6 +525,101 @@ export class BridgeServer extends EventEmitter<Events> {
         app: this.app,
       }),
     );
+  }
+
+  // ---- peers -----------------------------------------------------------------
+
+  private onPeer(ws: WebSocket): void {
+    const serverNonce = newNonce();
+    let authed = false;
+    let app: string | undefined;
+    let lastSeenAt = Date.now();
+    const log = this.log.child({ peer: true });
+    const fail = (code: number, reason: string) => ws.close(code, reason);
+    const handshakeTimer = setTimeout(() => fail(CloseCode.HandshakeTimeout, "handshake timeout"), this.opts.handshakeTimeoutMs);
+    const idleTimer = setInterval(() => {
+      if (Date.now() - lastSeenAt > this.opts.heartbeatTimeoutMs) fail(CloseCode.HeartbeatTimeout, "heartbeat timeout");
+    }, HEARTBEAT_CHECK_MS);
+    idleTimer.unref();
+    this.peers.add(ws);
+
+    let inbox = Promise.resolve();
+    ws.on("message", (raw: RawData, isBinary: boolean) => {
+      const parsed = parseJson(raw, isBinary);
+      const msg = parsed === undefined ? null : PeerMessage.safeParse(parsed);
+      if (!msg?.success) {
+        fail(CloseCode.BadMessage, "bad peer message");
+        return;
+      }
+      lastSeenAt = Date.now();
+      const data = msg.data;
+      inbox = inbox
+        .then(async () => {
+          if (!authed) {
+            if (data.type !== "peer_hello") return fail(CloseCode.BadMessage, "expected peer_hello");
+            if (data.protocolVersion !== PROTOCOL_VERSION) {
+              return fail(CloseCode.ProtocolVersion, `bridge speaks protocol ${PROTOCOL_VERSION}`);
+            }
+            const secret = await this.opts.peerSecret!();
+            if (!verifyProof(computeProof(secret, "peer", serverNonce, data.clientNonce), data.proof)) {
+              log.warn("rejected peer: bad proof");
+              return fail(CloseCode.AuthFailed, "authentication failed");
+            }
+            clearTimeout(handshakeTimer);
+            authed = true;
+            app = data.app;
+            ws.send(
+              JSON.stringify({
+                type: "peer_welcome",
+                proof: computeProof(secret, "peer-server", serverNonce, data.clientNonce),
+              }),
+            );
+            log.debug("peer connected", { app });
+            return;
+          }
+          if (data.type === "ping") {
+            ws.send(JSON.stringify({ type: "pong", ts: data.ts }));
+            return;
+          }
+          if (data.type === "peer_call") {
+            this.lastPeerActivityAt = Date.now();
+            void this.answerPeer(ws, data, app);
+          }
+        })
+        .catch((err: unknown) => log.warn("peer message failed", { err }));
+    });
+    ws.on("close", () => {
+      clearTimeout(handshakeTimer);
+      clearInterval(idleTimer);
+      this.peers.delete(ws);
+    });
+    ws.on("error", (err) => log.warn("peer socket error", { err }));
+    ws.send(JSON.stringify({ type: "peer_challenge", protocolVersion: PROTOCOL_VERSION, serverNonce }));
+  }
+
+  private async answerPeer(ws: WebSocket, call: PeerCallMessage, peerApp: string | undefined): Promise<void> {
+    const reply = (body: Record<string, unknown>) => {
+      if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: "peer_result", id: call.id, ...body }));
+    };
+    try {
+      // The pairing window names whichever app is asking right now.
+      const app = call.app ?? peerApp;
+      if (app && !this.session) this.setAppName(app);
+      let result: unknown;
+      if (call.op === "state") result = await this.state();
+      else if (call.op === "wait") result = await this.waitForSession(call.timeoutMs ?? 8_000);
+      else {
+        if (!call.method) throw new BridgeError(ErrorCode.InvalidParams, "request needs a method");
+        result = await this.request(call.method, call.params ?? {}, call.timeoutMs ?? 15_000);
+      }
+      reply({ ok: true, result: result ?? null });
+    } catch (err) {
+      const e =
+        err instanceof BridgeError
+          ? err
+          : new BridgeError(ErrorCode.Internal, err instanceof Error ? err.message : String(err));
+      reply({ ok: false, error: { code: e.code, message: e.message, ...(e.data !== undefined ? { data: e.data } : {}) } });
+    }
   }
 
   private endPairing(ws: WebSocket, outcome: "accepted" | "denied" | "abandoned"): void {

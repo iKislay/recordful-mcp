@@ -4,17 +4,16 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
-import type { BridgeServer } from "../bridge/BridgeServer.js";
-import type { BindSupervisor } from "../bridge/keepBound.js";
+import type { Bridge } from "../bridge/BridgeServer.js";
 import type { BridgeConfig } from "../config.js";
 import type { Logger } from "../logger.js";
 import { BridgeError, ErrorCode } from "../protocol/errors.js";
 import { Method } from "../protocol/methods.js";
 import { pageExtraWaitMs, pageParams, parsePageParams, type PageMethod } from "../protocol/page.js";
+import { registerVideoTools } from "./videoTools.js";
 
 export interface McpServerDeps {
-  bridge: BridgeServer;
-  binding: BindSupervisor | null;
+  bridge: Bridge;
   config: BridgeConfig;
   logger: Logger;
   version: string;
@@ -32,12 +31,19 @@ Typical flow for "record feature X" (the record_feature prompt has the full vers
 6. Walk through the feature with the page tools: snapshot() lists the interactive elements with refs ("e12"), then click(ref), type(ref, text), press(key), scroll(...), wait_for(...). Recordful moves a visible cursor to each target and types at a human pace, so the video looks like a person using the app. Take a fresh snapshot after anything that changes the page; refs from before a navigation stop working.
 7. Call pause_recording before you stop to think or plan the next steps, and resume_recording right before acting again, so the video has no dead air. snapshot and screenshot work while paused.
 8. Call stop_recording. Recordful opens its editor with the recording automatically.
+9. To share it or read it back (Recordful Pro): stop_recording says where the recording went. A cloud recording is already uploading; a local one uploads with upload_recording. get_video gives its links once it's ready, and get_transcript returns what was said (it transcribes on first use and waits).
+
+Free and Pro:
+- Every plan: recording, page tools, and Recordful's editor (the video is saved on this computer and opens there).
+- Recordful Pro only: uploads, cloud videos (list_videos, get_video) and transcripts (get_transcript).
+- get_status shows recorder.account.plan: "pro", "free", "signed-out", or "unavailable". Check it before you promise a link or a transcript. If it isn't "pro", record as usual, tell the user the video is open in Recordful's editor, and mention once that links and transcripts come with Recordful Pro (recordful.app/upgrade). Don't call upload_recording or get_transcript, and don't retry them after PRO_REQUIRED or NOT_SIGNED_IN.
 
 First connection on a computer:
 - NOT_CONNECTED: ask the user to click the Recordful icon. If that doesn't connect, they need to turn on AI agents in Recordful once (Recordful popup → More → AI agents, or paste chrome-extension://hkcgjbkibidgbefehehenlmhjanjaopc/agents.html into Chrome's address bar).
 - PAIRING_PENDING: Recordful opened a window asking the user to approve you. Tell them the 4-digit code from the error so they can check it matches, ask them to click Allow, then retry. This happens once per computer.
 - PAIRING_DENIED: the user declined. Don't retry unless they ask.
 - NOT_ARMED, or start_recording returning outcome "pending": the user hasn't clicked the Recordful icon on that tab yet. Ask them to, then retry.
+- NOT_SIGNED_IN or PRO_REQUIRED: uploads and transcripts need the user signed in to Recordful Pro. Relay the error's message (it says what still works); don't retry.
 
 If you have a browser tool of your own you can use it for the walkthrough instead, but Recordful's page tools make smoother videos.
 "screen" mode always shows Chrome's screen picker, which the user must answer.
@@ -80,7 +86,7 @@ const tabId = z
   .describe("Chrome tab ID to target. Defaults to the active tab of the last focused window.");
 
 export const createMcpServer = (deps: McpServerDeps): McpServer => {
-  const { bridge, binding, config, logger } = deps;
+  const { bridge, config, logger } = deps;
   const log = logger.child({ component: "mcp" });
 
   const server = new McpServer(
@@ -95,14 +101,6 @@ export const createMcpServer = (deps: McpServerDeps): McpServer => {
     params: Record<string, unknown>,
     extraWaitMs = 0,
   ): Promise<unknown> => {
-    if (!bridge.listening) {
-      throw binding?.lastError instanceof BridgeError
-        ? binding.lastError
-        : new BridgeError(
-            ErrorCode.BridgeUnavailable,
-            binding?.lastError?.message ?? "The bridge is not listening.",
-          );
-    }
     await bridge.waitForSession(config.connectWaitMs);
     const started = Date.now();
     try {
@@ -132,12 +130,14 @@ export const createMcpServer = (deps: McpServerDeps): McpServer => {
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
     async () => {
-      const session = bridge.currentSession;
-      const pairing = bridge.pairing;
+      const { session, pairing } = await bridge.state();
+      const { mode, error } = bridge.connection;
       const base = {
         bridge: {
-          listening: bridge.listening,
-          bindError: binding?.lastError?.message ?? null,
+          // owner: this process holds Recordful's connection; peer: it shares
+          // another recordful-mcp's (another AI app or the CLI started first).
+          mode,
+          error,
           extensionConnected: session !== null,
           session,
           pairing: pairing ? { code: pairing.code, app: pairing.app, startedAt: pairing.startedAt } : null,
@@ -180,13 +180,15 @@ export const createMcpServer = (deps: McpServerDeps): McpServer => {
     {
       title: "Stop recording",
       description:
-        "Stop the current Recordful recording. Recordful then opens its editor with the recording, exactly as when the user clicks Stop. Returns the editor tab ID when it is known.",
+        'Stop the current Recordful recording. Recordful then opens its editor with the recording, exactly as when the user clicks Stop. Returns where it went: recording.kind "cloud" (Recordful Pro: already uploading, with its videoId and links) or "local" (saved on this computer as takeId; upload_recording uploads it).',
       inputSchema: { timeoutMs: waitMs },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     },
     handle(async ({ timeoutMs }: { timeoutMs?: number }) => {
       const wait = timeoutMs ?? 30_000;
-      return call(Method.RecordingStop, { timeoutMs: wait }, wait);
+      // After stopping, a local recording is written out (up to 20 s) and the
+      // editor opens (up to 15 s) before the extension answers.
+      return call(Method.RecordingStop, { timeoutMs: wait }, wait + 40_000);
     }),
   );
 
@@ -345,6 +347,16 @@ export const createMcpServer = (deps: McpServerDeps): McpServer => {
     },
   );
 
+  // ---- recordings: upload, videos, transcripts ------------------------------
+
+  registerVideoTools(server, call, async (fn) => {
+    try {
+      return text(await fn());
+    } catch (err) {
+      return failure(err);
+    }
+  });
+
   // ---- prompts -------------------------------------------------------------
   // The whole "record the feature I just built" workflow, shipped with the
   // server so every MCP client gets it (Claude Code lists it as
@@ -378,8 +390,9 @@ export const recordFeaturePrompt = (feature: string, url?: string): string => `R
 2. Get the app running. ${url ? `It should be at ${url}.` :"If it's a local project, find how to run it (package.json scripts, README, Makefile, docker compose) and the URL it serves."} If it isn't running, start it in the background and wait until it answers.
 3. Prepare test data. Use test accounts and data only: from seed, fixture or example-config files, or create a new one through the app itself (for example sign up as demo+<timestamp>@example.com with a generated password). Never type the user's real credentials or personal data; if real credentials are unavoidable, ask the user to sign in themselves first.
 4. Write a short shot list, 5 to 10 steps for a 30 to 90 second video: the starting screen, the main action, the result, an optional second state, and a clear final screen. Share it with the user in a line or two, then go ahead unless something is unclear.
-5. Ask the user to click the Recordful icon in Chrome on the tab with the app. The first time only, they also turn on AI agents (Recordful popup → More → AI agents), and approve the pairing code you'll get back. Then call get_status.
+5. Ask the user to click the Recordful icon in Chrome on the tab with the app. The first time only, they also turn on AI agents (Recordful popup → More → AI agents), and approve the pairing code you'll get back. Then call get_status, and note recorder.account.plan: links and transcripts need "pro".
 6. navigate to the starting page and snapshot it. Make sure the starting state is clean (signed out for a sign-in demo, no leftover data or open dialogs).
 7. start_recording, then follow the shot list with the page tools at a calm pace. Use wait_for so each result is visible before you move on. Call pause_recording whenever you need to think, and resume_recording right before the next action, so the video has no dead air.
 8. If something goes wrong while recording (an error, the wrong page), pause, fix it, and resume. Stop and start over only if the mistake would confuse viewers.
-9. stop_recording. Recordful opens its editor with the video. Tell the user it's ready and summarise what the video shows in one or two sentences.`;
+9. stop_recording. Recordful opens its editor with the video. Tell the user it's ready and summarise what the video shows in one or two sentences.
+10. If the plan is "pro" and the user wants to share it or check what was said: upload_recording (a cloud recording is already uploading), then get_transcript. On any other plan, don't attempt these; say once that shareable links and transcripts come with Recordful Pro.`;

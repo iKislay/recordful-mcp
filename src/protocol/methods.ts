@@ -18,6 +18,13 @@ export const Method = {
   PageScroll: "page.scroll",
   PageWaitFor: "page.waitFor",
   PageScreenshot: "page.screenshot",
+  // Recordings once they exist: uploads, cloud videos, transcripts (see video.ts).
+  AccountGet: "account.get",
+  TakesList: "takes.list",
+  VideoUpload: "video.upload",
+  VideoGet: "video.get",
+  VideoList: "video.list",
+  VideoTranscript: "video.transcript",
 } as const;
 export type Method = (typeof Method)[keyof typeof Method];
 

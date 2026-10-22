@@ -10,6 +10,10 @@ import { z } from "zod";
 
 export const PROTOCOL_VERSION = 2;
 export const BRIDGE_PATH = "/recordful-agent-bridge/v2";
+// Where a second recordful-mcp process (another AI app, the CLI) connects to
+// use the first one's connection to Recordful. Never a browser: no Origin.
+export const PEER_PATH = `${BRIDGE_PATH}/peer`;
+export const MAX_PEERS = 16;
 export const DEFAULT_PORT = 47823;
 export const BRIDGE_HOST = "127.0.0.1";
 
@@ -147,6 +151,29 @@ export const ClientMessage = z.union([
   PingMessage,
 ]);
 export type ClientMessage = z.infer<typeof ClientMessage>;
+
+// ---- peers (other recordful-mcp processes on this machine) ------------------
+
+export const PeerHelloMessage = z.object({
+  type: z.literal("peer_hello"),
+  protocolVersion: z.number().int(),
+  clientNonce: nonce,
+  proof,
+  app: z.string().max(80).optional(),
+});
+
+export const PeerCallMessage = z.object({
+  type: z.literal("peer_call"),
+  id: z.string().max(64),
+  op: z.enum(["state", "wait", "request"]),
+  app: z.string().max(80).optional(),
+  timeoutMs: z.number().int().min(1).max(30 * 60_000).optional(),
+  method: z.string().max(64).optional(),
+  params: z.record(z.string(), z.unknown()).optional(),
+});
+export type PeerCallMessage = z.infer<typeof PeerCallMessage>;
+
+export const PeerMessage = z.union([PeerHelloMessage, PeerCallMessage, PingMessage]);
 
 // ---- close codes -----------------------------------------------------------
 

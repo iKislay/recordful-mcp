@@ -11,8 +11,8 @@
     {
       "name": "recordful",
       "source": "./plugin",
-      "description": "Record product demos in Chrome with Recordful: the recordful MCP server, a record-demo skill and a /record-demo command.",
-      "version": "0.3.0"
+      "description": "Record product demos in Chrome with Recordful, upload them and read back transcripts: the recordful MCP server, a record-demo skill and a /record-demo command.",
+      "version": "0.4.0"
     }
   ]
 }

@@ -43,6 +43,14 @@ If Recordful or the MCP server isn't installed, point the user to https://github
 5. If something goes wrong (an error, the wrong page), pause, fix it, and resume. Start over only if the mistake would confuse viewers.
 6. `stop_recording`. Recordful opens its editor with the video.
 
-## 7. Wrap up
+## 7. Share it or read it back (Recordful Pro)
 
-Tell the user the video is open in Recordful's editor, and summarise what it shows in one or two sentences.
+`get_status` shows `recorder.account.plan`. Only on `"pro"`:
+- `upload_recording` puts a local recording on recordful.app and returns its link (a cloud recording is already uploading; `stop_recording` says which).
+- `get_transcript` returns what was said, to check the demo or write notes from it.
+
+On `"free"` or `"signed-out"`, don't call these. Recording and the editor work on every plan; say once that shareable links and transcripts come with Recordful Pro (recordful.app/upgrade). Don't retry after `PRO_REQUIRED` or `NOT_SIGNED_IN`.
+
+## 8. Wrap up
+
+Tell the user the video is open in Recordful's editor (and its link, on Pro), and summarise what it shows in one or two sentences.

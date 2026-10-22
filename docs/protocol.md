@@ -71,9 +71,9 @@ One authenticated session at a time: a newer authenticated connection supersedes
 
 | Method | Params | Result |
 | --- | --- | --- |
-| `status.get` | — | `{state, recordingType, recordingUiTabId, recordingStartTime, activeTab, permissions, extension, editor}` |
+| `status.get` | — | `{state, recordingType, recordingUiTabId, recordingStartTime, activeTab, permissions, extension, editor, agent, account:{cloud, signedIn, pro, plan, email, features}, lastRecording}` |
 | `recording.start` | `tabId?` (default: the armed tab), `timeoutMs?` (1000–120000, default 30000) | `{outcome:"recording", tabId, recordingType, waitedMs, recordingStartTime}` or `{outcome:"pending", hint, ...}`. In tab capture modes (`tab`, `region`) a tab the user hasn't handed over fails at once with `NOT_ARMED` |
-| `recording.stop` | `timeoutMs?` | `{outcome:"stopped", editorTabId, editorUrl, hint?}` |
+| `recording.stop` | `timeoutMs?` | `{outcome:"stopped", recording:{kind:"cloud", videoId, viewUrl, editUrl} \| {kind:"local", takeId}, plan, editorTabId?, editorUrl?, hint?}`. Waits up to 20 s for a local recording to be written out |
 | `recording.pause` / `recording.resume` | — | `{outcome:"paused"/"recording", changed}` |
 | `capture.probe` | `tabId?` | `{tab, recordable, tabCapture:{ok, error}, permissions, recordingType}` |
 | `page.navigate` | `url` (http/https), `timeoutMs?` (1000–60000, default 20000) | `{url, title, loaded, waitedMs, hint?}` |
@@ -84,8 +84,36 @@ One authenticated session at a time: a newer authenticated connection supersedes
 | `page.scroll` | `ref`, or `direction` (`up`/`down`/`left`/`right`) with `amount?` px | `{scrolledTo, box}` or `{scrolled, position, container, atEnd}` |
 | `page.waitFor` | `text` or `ref`, `state?` (`visible`/`hidden`), `timeoutMs?` (100–60000, default 10000) | `{satisfied:true, waitedMs}` or error `WAIT_TIMEOUT` |
 | `page.screenshot` | — | `{mimeType:"image/jpeg", data (base64), width, height, scale, tabId, url, title}` |
+| `account.get` | — | `{cloud, signedIn, pro, plan, email, site, features}` |
+| `takes.list` | — | `{takes:[{takeId, bytes, recordedAt, uploadedVideoId, isLastRecording}]}` |
+| `video.upload` | `takeId?`, `title?`, `visibility?` (`private`/`workspace`/`public`), `force?` | `{videoId, takeId, title, viewUrl, editUrl, stage:"uploading", totalBytes, camera:"included"\|"skipped"\|"none"}`, or `{alreadyUploaded:true, ...}`. Answers once the video exists; the upload continues in the extension |
+| `video.get` | `videoId?` | `{videoId, title, visibility, durationSeconds, createdAt, viewUrl, editUrl, stage:"uploading"\|"processing"\|"ready"\|"failed", uploadedBytes, totalBytes, error?}` |
+| `video.list` | `limit?` (1–50, default 10), `query?` | `{videos:[{videoId, title, createdAt, durationSeconds, visibility, viewUrl, editUrl}]}` |
+| `video.transcript` | `videoId?`, `start?` (default true) | `{videoId, status:"done", text, vtt, viewUrl, editUrl}` or `{status:"working"\|"uploading"\|"none"}` or `{status:"failed", reason}`. One look; the MCP server and CLI poll it to wait |
 
-Requests run on queues in the extension: recorder methods (`recording.*`, `capture.probe`) one at a time on one queue, page methods one at a time on another, and `status.get` on none, so it never waits behind either.
+Requests run on queues in the extension: recorder methods (`recording.*`, `capture.probe`) one at a time on one queue, page methods one at a time on another, uploads on a third, and the read-only methods on none, so they never wait behind the others.
+
+### Video methods
+
+- **As the signed-in user.** The extension calls recordful.app's API (`RECORDFUL_API_BASE_URL`) with its own session token, refreshing it once on a 401. Agents never hold a credential.
+- **Plans.** Uploads and transcripts need Recordful Pro. `video.upload` and `video.transcript` check the account first and fail with `PRO_REQUIRED` (data `{plan:"free", upgradeUrl}`) or `NOT_SIGNED_IN` (data `{plan:"signed-out", signInUrl, upgradeUrl}`); the message says recording still works.
+- **Upload.** The same steps as the web editor's "Share": `POST /videos/create`, then per file `POST /uploads`, signed part URLs from `/uploads/:id/parts` (5 MiB parts, each retried twice), `PUT` to storage, `POST /uploads/:id/complete`, then `PATCH /videos/:id` for title and visibility. A camera recorded as its own file is included only when it starts within 0.25 s of the screen, since only an edit can line it up otherwise. Progress lives in `chrome.storage.session.agentUploads`; an upload cut off by a worker restart reports `UPLOAD_INTERRUPTED`. Uploaded takes are remembered in `chrome.storage.local.agentUploadedTakes`, so a take isn't uploaded twice.
+- **Last recording.** Stopping or uploading sets `chrome.storage.session.agentLastRecording`; video methods without a `videoId` use it, else the newest video in the account.
+- **Transcript.** `GET /videos/:id/transcript?text=1` returns `text` and `vtt` once done; `POST` starts one (Pro, rate-limited per workspace).
+
+## Peers
+
+A second recordful-mcp process (another AI app, or the CLI) connects to the owner at `ws://127.0.0.1:<port>/recordful-agent-bridge/v2/peer` and forwards calls through the owner's connection to the extension. Requests to this endpoint must not carry an `Origin` header (browsers always send one, so web pages can't reach it); at most 16 peers.
+
+```
+owner → peer   {type:"peer_challenge", protocolVersion:2, serverNonce}
+peer  → owner  {type:"peer_hello", protocolVersion:2, clientNonce, proof, app?}
+owner → peer   {type:"peer_welcome", proof}
+peer  → owner  {type:"peer_call", id, op:"state"|"wait"|"request", app?, timeoutMs?, method?, params?}
+owner → peer   {type:"peer_result", id, ok:true, result} | {type:"peer_result", id, ok:false, error:{code, message, data?}}
+```
+
+Proofs are `HMAC-SHA256(peerSecret, "recordful-agent-bridge:peer:<serverNonce>:<clientNonce>")` and `...:peer-server:...`, with `peerSecret` from the shared pairing file, so only processes of the same user (reading the same file) can join. Peers ping every 20 s. When the owner exits, peers race (with jitter) to take the port over; the extension reconnects to the new owner. The CLI only ever joins: if nothing owns the port it starts a detached helper (`recordful-mcp daemon`) that owns it and exits after 30 idle minutes.
 
 ### Page methods
 
@@ -98,7 +126,7 @@ Requests run on queues in the extension: recorder methods (`recording.*`, `captu
 
 ## Error codes
 
-`NOT_CONNECTED`, `DISCONNECTED`, `TIMEOUT`, `BRIDGE_UNAVAILABLE`, `INVALID_PARAMS`, `PAIRING_PENDING` (with `data.code`), `PAIRING_DENIED` (bridge side); `UNKNOWN_METHOD`, `ALREADY_RECORDING`, `NOT_RECORDING`, `NO_TARGET_TAB`, `TAB_NOT_RECORDABLE`, `START_FAILED`, `STOP_FAILED`, `INTERNAL`, and for page methods `NOT_ARMED`, `TAB_NOT_ACTIVE`, `PAGE_NOT_SCRIPTABLE`, `STALE_REF`, `ELEMENT_NOT_INTERACTABLE`, `ELEMENT_OBSCURED` (with `data.obscuredBy`), `NAVIGATION_FAILED`, `WAIT_TIMEOUT` (extension side). Codes are a public contract: new codes can be added, but existing ones are never repurposed.
+`NOT_CONNECTED`, `DISCONNECTED`, `TIMEOUT`, `BRIDGE_UNAVAILABLE`, `INVALID_PARAMS`, `PAIRING_PENDING` (with `data.code`), `PAIRING_DENIED`, `TRANSCRIPTION_FAILED` (bridge side); for video methods `NO_RECORDING`, `NOT_SIGNED_IN`, `PRO_REQUIRED`, `VIDEO_NOT_FOUND`, `NOT_UPLOADED`, `STORAGE_FULL`, `RATE_LIMITED`, `TRANSCRIPTION_UNAVAILABLE`, `UPLOAD_FAILED`, `UPLOAD_INTERRUPTED`, `CLOUD_UNAVAILABLE`, `CLOUD_UNREACHABLE`, `CLOUD_ERROR` (extension side); `UNKNOWN_METHOD`, `ALREADY_RECORDING`, `NOT_RECORDING`, `NO_TARGET_TAB`, `TAB_NOT_RECORDABLE`, `START_FAILED`, `STOP_FAILED`, `INTERNAL`, and for page methods `NOT_ARMED`, `TAB_NOT_ACTIVE`, `PAGE_NOT_SCRIPTABLE`, `STALE_REF`, `ELEMENT_NOT_INTERACTABLE`, `ELEMENT_OBSCURED` (with `data.obscuredBy`), `NAVIGATION_FAILED`, `WAIT_TIMEOUT` (extension side). Codes are a public contract: new codes can be added, but existing ones are never repurposed.
 
 ## Extension adapter
 

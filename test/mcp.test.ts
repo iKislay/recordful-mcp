@@ -33,7 +33,7 @@ const setup = async (handlers?: Record<string, Handler>) => {
     await extension.ready;
   }
 
-  const server = createMcpServer({ bridge, binding: null, config, logger: silentLogger, version: "0.0.0-test" });
+  const server = createMcpServer({ bridge, config, logger: silentLogger, version: "0.0.0-test" });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   const client = new Client({ name: "test", version: "0.0.0" });
   await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
@@ -51,6 +51,10 @@ describe("MCP tools", () => {
     expect(tools.map((t) => t.name).sort()).toEqual([
       "click",
       "get_status",
+      "get_transcript",
+      "get_video",
+      "list_recordings",
+      "list_videos",
       "navigate",
       "pause_recording",
       "press",
@@ -62,11 +66,12 @@ describe("MCP tools", () => {
       "start_recording",
       "stop_recording",
       "type",
+      "upload_recording",
       "wait_for",
     ]);
     const instructions = client.getInstructions() ?? "";
     // The order agents must follow: plan, hand over the tab, start, act, pause, stop.
-    const order = ["Plan", "Recordful toolbar icon", "start_recording", "click(ref)", "pause_recording", "stop_recording"];
+    const order = ["Plan", "Recordful toolbar icon", "start_recording", "click(ref)", "pause_recording", "stop_recording", "upload_recording", "get_transcript"];
     const positions = order.map((needle) => instructions.indexOf(needle));
     expect(positions.every((p) => p >= 0)).toBe(true);
     expect([...positions].sort((a, b) => a - b)).toEqual(positions);

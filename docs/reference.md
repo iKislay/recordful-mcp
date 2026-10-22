@@ -17,6 +17,17 @@
 | `wait_for` | Waits for text or an element to appear or go away; keeps waiting across page loads |
 | `screenshot` | Returns what the tab shows right now, as an image |
 | `probe_capture` | Diagnostic: whether Recordful can capture the tab right now, and which permissions are granted |
+| `list_recordings` | Recordings saved on this computer, newest first, with their `takeId` and `videoId` once uploaded |
+| `upload_recording` | **Pro.** Uploads a local recording (default: the last one) and waits until it's up; returns the `videoId` and its view and edit links. Never uploads the same recording twice unless `force` |
+| `get_video` | A video's title, length, visibility, links and upload stage (`uploading` → `processing` → `ready`); `wait` keeps checking until it's ready |
+| `list_videos` | The user's videos on recordful.app, newest first, optionally filtered by title |
+| `get_transcript` | **Pro.** What was said, as `text`, `vtt` or both. Transcribes on first use and waits, including for an upload still in progress |
+
+Tools that wait report MCP progress (upload percentage, transcription) to apps that ask for it, and always return within their `timeoutMs`; call again to keep waiting. Without a `videoId`, video tools use the last recording (stopped or uploaded in this browser session), else the newest video in the account.
+
+### Plans
+
+`get_status` reports `recorder.account.plan`: `pro`, `free`, `signed-out`, or `unavailable` (a build without cloud features). Recording, page tools and the editor work on every plan. Uploads, cloud videos and transcripts need Pro: on other plans they fail at once with `PRO_REQUIRED` or `NOT_SIGNED_IN`, whose message says what still works and whose `data` carries `plan` and `upgradeUrl`.
 
 Page tools use synthetic browser events. Links, buttons, checkboxes, form fields and form submits work. Native dropdown popups, file pickers, content inside iframes, and actions that need a real user gesture (opening pop-up windows, the clipboard) don't. Details: [protocol.md](protocol.md#page-methods).
 
@@ -27,12 +38,23 @@ Page tools use synthetic browser events. Links, buttons, checkboxes, form fields
 ## Command line
 
 ```text
-npx -y recordful-mcp                      run the MCP server (what AI apps start)
-npx -y recordful-mcp setup                print the setup snippet for each AI app
-npx -y recordful-mcp status               show this computer's pairing state
-npx -y recordful-mcp unpair <id>|--all    forget a paired Recordful (or all)
-npx -y recordful-mcp call <method> [json] call one Recordful method directly, for debugging
+npx -y recordful-mcp                       run the MCP server (what AI apps start)
+npx -y recordful-mcp setup                 print the setup snippet for each AI app
+npx -y recordful-mcp start [--tab <id>]    start recording (click the Recordful icon on the tab first)
+npx -y recordful-mcp pause | resume | stop
+npx -y recordful-mcp recordings            recordings saved on this computer
+npx -y recordful-mcp upload [<takeId>] [--title <t>] [--visibility private|workspace|public] [--force] [--no-wait]
+npx -y recordful-mcp videos [--limit <n>] [--query <text>]
+npx -y recordful-mcp video [<videoId>] [--wait]
+npx -y recordful-mcp transcript [<videoId>] [--format text|vtt|json] [--no-wait]
+npx -y recordful-mcp status                connection, recorder, plan and pairing state
+npx -y recordful-mcp unpair <id>|--all     forget a paired Recordful (or all)
+npx -y recordful-mcp call <method> [json]  call one Recordful method directly, for debugging
 ```
+
+Every command takes `--json` and `--timeout <ms>` (for the waiting ones). Results go to stdout, progress and errors to stderr; the exit code is 0 on success, 1 on an error, 2 when `transcript` isn't ready yet.
+
+The first command starts a small background helper that holds Recordful's connection, so you click the Recordful icon once rather than before every command. It exits after 30 idle minutes. If an AI app's recordful-mcp is already running, commands use its connection instead.
 
 ## Configuration
 
@@ -48,4 +70,4 @@ All optional, set through environment variables (for example in your AI app's `e
 | `RECORDFUL_BRIDGE_CONNECT_WAIT_MS` | `8000` | How long a tool waits for Recordful to connect |
 | `RECORDFUL_BRIDGE_LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error`. Logs are JSON lines on stderr |
 
-Only one server can own the port at a time. If two AI apps each start one, the second retries in the background and takes over when the first exits; until then its tools report `BRIDGE_UNAVAILABLE`.
+The first recordful-mcp on the computer owns the port; every other one (a second AI app, the CLI) shares its connection, and takes the port over if the owner exits. So any number of AI apps can use Recordful at once.

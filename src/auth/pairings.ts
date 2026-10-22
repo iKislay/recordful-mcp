@@ -1,7 +1,7 @@
 // Machine-wide bridge state: one server identity plus the extensions that
 // paired with it. Every recordful-mcp process the user's AI apps start shares
 // this file, so the user pairs once per machine, not once per app.
-import { randomUUID } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { chmod, mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
@@ -24,6 +24,9 @@ const StateFileV2 = z.object({
   pairings: z.record(z.string(), PairingRecord),
   // A v0.1 token, kept so development builds that baked it in still connect.
   legacyToken: z.string().min(MIN_STATIC_SECRET_LENGTH).optional(),
+  // Shared by this user's recordful-mcp processes: a second one (another AI
+  // app, the CLI) proves it with this to use the first one's connection.
+  peerSecret: z.string().min(MIN_STATIC_SECRET_LENGTH).optional(),
 });
 type StateFileV2 = z.infer<typeof StateFileV2>;
 
@@ -61,11 +64,24 @@ export class PairingStore {
     if (opts.envSecret && opts.envSecret.length < MIN_STATIC_SECRET_LENGTH) {
       throw new Error(`RECORDFUL_BRIDGE_TOKEN must be at least ${MIN_STATIC_SECRET_LENGTH} characters`);
     }
-    const state = await loadOrCreate(path);
+    let state = await loadOrCreate(path);
+    if (!state.peerSecret) {
+      await writeState(path, { ...state, peerSecret: randomBytes(32).toString("base64url") });
+      // Another process may have written at the same moment: the file wins.
+      state = (await readState(path)) ?? state;
+    }
     const staticSecrets = [opts.envSecret, state.legacyToken].filter(
       (s): s is string => typeof s === "string" && s.length > 0,
     );
     return new PairingStore(path, state.serverId, staticSecrets);
+  }
+
+  // The secret recordful-mcp processes prove to each other. Re-read each
+  // time, so every process agrees even if two created it at once.
+  async peerSecret(): Promise<string> {
+    const state = await readState(this.path);
+    if (!state?.peerSecret) throw new Error(`${this.path} has no peer secret; delete it and restart`);
+    return state.peerSecret;
   }
 
   // Secrets this extension may sign with. Re-read on every call: another
@@ -146,9 +162,11 @@ const loadOrCreate = async (path: string): Promise<StateFileV2> => {
     serverId: randomUUID(),
     createdAt: new Date().toISOString(),
     pairings: {},
+    peerSecret: randomBytes(32).toString("base64url"),
   };
   await writeState(path, fresh);
-  return fresh;
+  // Two processes starting together each write one: adopt whichever landed.
+  return (await readState(path)) ?? fresh;
 };
 
 // Write-then-rename so a crash or a concurrent reader never sees half a file.

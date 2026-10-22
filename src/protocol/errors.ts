@@ -27,6 +27,21 @@ export const ErrorCode = {
   ElementObscured: "ELEMENT_OBSCURED",
   NavigationFailed: "NAVIGATION_FAILED",
   WaitTimeout: "WAIT_TIMEOUT",
+  // uploads, videos, transcripts (extension-side)
+  NoRecording: "NO_RECORDING",
+  CloudUnavailable: "CLOUD_UNAVAILABLE",
+  CloudUnreachable: "CLOUD_UNREACHABLE",
+  CloudError: "CLOUD_ERROR",
+  NotSignedIn: "NOT_SIGNED_IN",
+  ProRequired: "PRO_REQUIRED",
+  VideoNotFound: "VIDEO_NOT_FOUND",
+  StorageFull: "STORAGE_FULL",
+  NotUploaded: "NOT_UPLOADED",
+  RateLimited: "RATE_LIMITED",
+  TranscriptionUnavailable: "TRANSCRIPTION_UNAVAILABLE",
+  TranscriptionFailed: "TRANSCRIPTION_FAILED",
+  UploadFailed: "UPLOAD_FAILED",
+  UploadInterrupted: "UPLOAD_INTERRUPTED",
 } as const;
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
 

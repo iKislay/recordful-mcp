@@ -4,7 +4,9 @@
 // holds the token (otherwise anything on 127.0.0.1 could start a recording).
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
-export type ProofRole = "client" | "server";
+// client/server: the extension and the bridge. peer/peer-server: a second
+// recordful-mcp process and the one it connects to.
+export type ProofRole = "client" | "server" | "peer" | "peer-server";
 
 export const newNonce = (): string => randomBytes(32).toString("hex");
 

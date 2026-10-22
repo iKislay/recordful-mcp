@@ -1,12 +1,18 @@
 {
   "name": "recordful",
-  "version": "0.3.0",
-  "description": "Record product demos in Chrome with Recordful: the recordful MCP server, a record-demo skill and a /record-demo command.",
+  "version": "0.4.0",
+  "description": "Record product demos in Chrome with Recordful, upload them and read back transcripts: the recordful MCP server, a record-demo skill and a /record-demo command.",
   "author": {
     "name": "Kislay",
     "url": "https://recordful.app"
   },
   "homepage": "https://github.com/iKislay/recordful-mcp",
   "repository": "https://github.com/iKislay/recordful-mcp",
-  "keywords": ["recordful", "screen-recording", "product-demo", "video", "browser"]
+  "keywords": [
+    "recordful",
+    "screen-recording",
+    "product-demo",
+    "video",
+    "browser"
+  ]
 }
