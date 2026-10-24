@@ -25,6 +25,16 @@ export const Method = {
   VideoGet: "video.get",
   VideoList: "video.list",
   VideoTranscript: "video.transcript",
+  // Managing videos, folders and comments (Recordful Pro).
+  VideoUpdate: "video.update",
+  VideoDelete: "video.delete",
+  VideoEngagement: "video.engagement",
+  VideoComment: "video.comment",
+  VideoLike: "video.like",
+  VideoMove: "video.move",
+  FolderList: "folder.list",
+  FolderCreate: "folder.create",
+  StorageGet: "storage.get",
 } as const;
 export type Method = (typeof Method)[keyof typeof Method];
 

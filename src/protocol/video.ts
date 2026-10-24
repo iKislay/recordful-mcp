@@ -14,6 +14,11 @@ export const TakeId = z
   .regex(/^recording-[\w.-]{1,200}\.(webm|mp4)$/, "takeId must come from list_recordings")
   .describe("A local recording from list_recordings. Defaults to the last recording.");
 
+export const FolderId = z
+  .string()
+  .regex(/^[0-9a-f-]{36}$/i, "must be a folder ID from list_folders")
+  .describe("A folder ID from list_folders.");
+
 export const VISIBILITIES = ["private", "workspace", "public"] as const;
 
 export const videoParams = {
@@ -34,6 +39,32 @@ export const videoParams = {
   transcript: {
     videoId: VideoId.optional(),
     start: z.boolean().optional().describe("Start transcribing if there's no transcript yet (default true)."),
+  },
+  update: {
+    videoId: VideoId.optional(),
+    title: z.string().trim().min(1).max(200).optional().describe("New title."),
+    visibility: z.enum(VISIBILITIES).optional().describe('Who may watch: "private", "workspace" (their team) or "public" (anyone with the link).'),
+  },
+  remove: {
+    videoId: z.string().regex(/^[0-9a-f-]{36}$/i, "videoId must be a Recordful video ID").describe("The video to delete. Required: there is no default for a delete."),
+    confirm: z.literal(true).describe("Must be true, and only after the user has confirmed deleting this exact video."),
+  },
+  activity: { videoId: VideoId.optional() },
+  comment: {
+    videoId: VideoId.optional(),
+    body: z.string().trim().min(1).max(2000).describe("The comment text, exactly as the user approved it."),
+  },
+  like: {
+    videoId: VideoId.optional(),
+    liked: z.boolean().optional().describe("true to like (default), false to remove the like."),
+  },
+  createFolder: {
+    name: z.string().trim().min(1).max(120).describe("The folder's name."),
+    parentId: FolderId.optional().describe("The folder to create it in (from list_folders). Default: the top level."),
+  },
+  move: {
+    videoIds: z.array(z.string().regex(/^[0-9a-f-]{36}$/i, "each must be a Recordful video ID")).min(1).max(200).describe("The videos to move."),
+    folderId: FolderId.nullable().optional().describe("The destination folder (from list_folders), or null for the top level."),
   },
 } as const;
 

@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "recordful",
   "display_name": "Recordful",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Record product demos in Chrome: Claude plans the walkthrough, drives the page and records it with Recordful, then uploads it and reads the transcript back (Pro).",
   "long_description": "Recordful is a Chrome extension for polished product videos. This extension lets Claude use it: ask \"record a demo of the sign-up flow\" and Claude plans a short walkthrough, asks you to click the Recordful icon on the tab, then navigates, clicks and types with a smooth on-screen cursor while Recordful records. When it stops, Recordful's editor opens with the video.\n\nEverything runs on your computer. The first time, turn on AI agents in Recordful's settings and approve the pairing code Claude shows you.\n\nRequires the Recordful extension for Chrome: https://chromewebstore.google.com/detail/hkcgjbkibidgbefehehenlmhjanjaopc",
   "author": {

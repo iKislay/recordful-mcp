@@ -11,6 +11,7 @@ import { BridgeError, ErrorCode } from "../protocol/errors.js";
 import { Method } from "../protocol/methods.js";
 import { pageExtraWaitMs, pageParams, parsePageParams, type PageMethod } from "../protocol/page.js";
 import type { RecorderTransport, ServerCopy, Timeouts } from "./transport.js";
+import { registerLibraryTools } from "./libraryTools.js";
 import { registerVideoTools } from "./videoTools.js";
 
 export interface RecordfulServerDeps {
@@ -304,13 +305,18 @@ export const createRecordfulServer = (deps: RecordfulServerDeps): McpServer => {
 
   // ---- recordings: upload, videos, transcripts ------------------------------
 
-  registerVideoTools(server, call, async (fn) => {
+  const handleTool = async (fn: () => Promise<unknown>) => {
     try {
       return text(await fn());
     } catch (err) {
       return failure(err);
     }
-  });
+  };
+  registerVideoTools(server, call, handleTool);
+
+  // ---- managing videos, folders and comments (Pro) ---------------------------
+
+  registerLibraryTools(server, call, handleTool);
 
   // ---- prompts -------------------------------------------------------------
   // The whole "record the feature I just built" workflow, shipped with the

@@ -43,6 +43,7 @@ export const ErrorCode = {
   TranscriptionFailed: "TRANSCRIPTION_FAILED",
   UploadFailed: "UPLOAD_FAILED",
   UploadInterrupted: "UPLOAD_INTERRUPTED",
+  Forbidden: "FORBIDDEN",
 } as const;
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
 

@@ -50,11 +50,19 @@ describe("MCP tools", () => {
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual([
       "click",
+      "comment_on_video",
+      "create_folder",
+      "delete_video",
       "get_status",
+      "get_storage",
       "get_transcript",
       "get_video",
+      "get_video_activity",
+      "like_video",
+      "list_folders",
       "list_recordings",
       "list_videos",
+      "move_videos",
       "navigate",
       "pause_recording",
       "press",
@@ -66,6 +74,7 @@ describe("MCP tools", () => {
       "start_recording",
       "stop_recording",
       "type",
+      "update_video",
       "upload_recording",
       "wait_for",
     ]);

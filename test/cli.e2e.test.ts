@@ -38,6 +38,15 @@ const handlers = {
   "video.get": () => ({ videoId: VIDEO, ...LINKS, title: "Demo", stage: looks++ < 1 ? "uploading" : "processing", uploadedBytes: 1, totalBytes: 3_145_728 }),
   "video.list": () => ({ videos: [{ videoId: VIDEO, title: "Demo", createdAt: "2026-10-21", ...LINKS }] }),
   "video.transcript": () => ({ videoId: VIDEO, status: "done", text: "Hello world.", vtt: "WEBVTT" }),
+  "video.engagement": () => ({
+    videoId: VIDEO,
+    views: 12,
+    likes: 3,
+    comments: [{ id: "c1", body: "Nice demo", createdAt: "2026-10-21T10:00:00.000Z", author: "Sam" }],
+  }),
+  "video.comment": (p: Record<string, unknown>) => ({ videoId: VIDEO, comment: { id: "c2", body: p.body } }),
+  "video.move": (p: Record<string, unknown>) => ({ folderId: p.folderId, moved: (p.videoIds as string[]).length, skipped: [] }),
+  "video.delete": (p: Record<string, unknown>) => ({ deleted: true, videoId: p.videoId }),
 };
 
 // Like the real extension: keeps dialling until whoever owns the port answers.
@@ -147,6 +156,28 @@ describe("recordful-mcp CLI", () => {
     const { stdout } = await run(["videos"]);
     expect(stdout).toContain(VIDEO);
     expect(stdout).toContain(LINKS.viewUrl);
+  }, 30_000);
+
+  it("reads activity and posts a comment", async () => {
+    const activity = await run(["activity"]);
+    expect(activity.stdout).toContain("12 views, 3 likes, 1 comments");
+    expect(activity.stdout).toContain("Sam");
+    expect(activity.stdout).toContain("Nice demo");
+    const posted = await run(["comment", "--body", "Thanks!", "--json"]);
+    expect(JSON.parse(posted.stdout).comment.body).toBe("Thanks!");
+    const noBody = await run(["comment"]);
+    expect(noBody.code).toBe(1);
+    expect(noBody.stderr).toMatch(/--body/);
+  }, 30_000);
+
+  it("moves videos, and won't delete without --yes", async () => {
+    const moved = await run(["move", VIDEO, "--to", VIDEO, "--json"]);
+    expect(JSON.parse(moved.stdout)).toMatchObject({ moved: 1, folderId: VIDEO });
+    const refused = await run(["delete", VIDEO]);
+    expect(refused.code).toBe(1);
+    expect(refused.stderr).toMatch(/permanent/);
+    const deleted = await run(["delete", VIDEO, "--yes", "--json"]);
+    expect(JSON.parse(deleted.stdout)).toEqual({ deleted: true, videoId: VIDEO });
   }, 30_000);
 
   it("fails clearly on bad input, with exit code 1", async () => {

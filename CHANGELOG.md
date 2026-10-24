@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.0 (2026-10-24)
+
+Manage what's on recordful.app, not just upload to it (Recordful Pro).
+
+- **Nine new tools and matching commands**: `update_video` (rename, who may watch), `get_video_activity` (views, likes, every comment), `comment_on_video`, `like_video`, `list_folders`, `create_folder`, `move_videos`, `delete_video` and `get_storage`. CLI: `update`, `activity`, `comment --body`, `like [--undo]`, `folders`, `folder-create`, `move --to`, `delete --yes`, `storage`.
+- **Safe by design.** `delete_video` has no default video and needs `confirm: true` (the CLI needs `--yes`), so an agent can't delete by accident. Instructions, the skill and `guide --json` tell agents to show the user exactly what they'll change and wait for a yes before renaming, changing who can watch, commenting (comments are public to everyone who can watch), moving or deleting. Other workspaces' videos answer "not found"; only the recorder or the workspace owner can change a video.
+- `list_videos` and `get_video` now include each video's `folderId`.
+- New `FORBIDDEN` error for "only the person who recorded it, or the workspace owner, can do that".
+- Needs Recordful 4.6.19 or newer and recordful.app with `GET /videos/:id/engagement` and `GET /folders`. Verified live against recordful-ee and its database: rename and privacy, like and comment, reading the activity back, folders, moving in and out, storage, delete, and that a free account and another workspace are refused where they should be.
+
 ## Unreleased
 
 - Internal: the MCP tools and prompt now live in a transport-agnostic core (`src/core`) behind a `RecorderTransport` interface, so the coming hosted connector (mcp.recordful.app) can serve the same tools. No change for users: same tools, instructions, prompt and results.

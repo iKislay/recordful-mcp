@@ -35,6 +35,8 @@ Free and Pro:
 - Recordful Pro only: uploads, cloud videos (list_videos, get_video) and transcripts (get_transcript).
 - get_status shows recorder.account.plan: "pro", "free", "signed-out", or "unavailable". Check it before you promise a link or a transcript. If it isn't "pro", record as usual, tell the user the video is open in Recordful's editor, and mention once that links and transcripts come with Recordful Pro (recordful.app/upgrade). Don't call upload_recording or get_transcript, and don't retry them after PRO_REQUIRED or NOT_SIGNED_IN.
 
+Managing what's on recordful.app (Recordful Pro): update_video (rename, who may watch), get_video_activity (views, likes, comments), comment_on_video, like_video, list_folders, create_folder, move_videos, delete_video, get_storage. These change or publish things for the user, so show them exactly what you'll do and wait for their yes before update_video, comment_on_video, move_videos, create_folder or delete_video; delete_video also needs the exact video named and confirm: true. Comments are public to everyone who can watch the video: post only the text the user approved.
+
 First connection on a computer:
 - NOT_CONNECTED: ask the user to click the Recordful icon. If that doesn't connect, they need to turn on AI agents in Recordful once (Recordful popup → More → AI agents, or paste chrome-extension://hkcgjbkibidgbefehehenlmhjanjaopc/agents.html into Chrome's address bar).
 - PAIRING_PENDING: Recordful opened a window asking the user to approve you. Tell them the 4-digit code from the error so they can check it matches, ask them to click Allow, then retry. This happens once per computer.

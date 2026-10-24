@@ -50,6 +50,17 @@ Videos (uploads and transcripts need Recordful Pro):
   recordful-mcp transcript [<videoId>] [--format text|vtt|json] [--no-wait]
                                        Print what was said (transcribes on first use)
 
+Manage videos, comments and folders (Recordful Pro; change things only when the user asked):
+  recordful-mcp update [<videoId>] [--title <t>] [--visibility private|workspace|public]
+  recordful-mcp delete <videoId> --yes      Permanent; --yes confirms this exact video
+  recordful-mcp activity [<videoId>]        Views, likes and comments
+  recordful-mcp comment [<videoId>] --body <text>
+  recordful-mcp like [<videoId>] [--undo]
+  recordful-mcp folders                     Your folders
+  recordful-mcp folder-create <name> [--parent <folderId>]
+  recordful-mcp move <videoId>... [--to <folderId>]   (no --to: the top level)
+  recordful-mcp storage                     Cloud storage used
+
 Other:
   recordful-mcp status                 Connection, recorder and pairing state
   recordful-mcp unpair [<id>|--all]    Forget a paired Recordful (or all of them)
@@ -427,6 +438,100 @@ const runCommand = async (command: string, parsed: Parsed, config: BridgeConfig,
         }
         if (typeof r.note === "string") note(r.note);
         out(String(format === "vtt" ? r.vtt ?? "" : r.text ?? ""));
+      });
+    case "update":
+      return withRecordful(config, logger, quiet, async (call) => {
+        const visibility = flags.visibility;
+        if (visibility !== undefined && !VISIBILITIES.includes(visibility as (typeof VISIBILITIES)[number])) {
+          throw new BridgeError(ErrorCode.InvalidParams, `--visibility must be one of ${VISIBILITIES.join(", ")}`);
+        }
+        const r = (await call(
+          Method.VideoUpdate,
+          {
+            ...(positional[0] ? { videoId: positional[0] } : {}),
+            ...(typeof flags.title === "string" ? { title: flags.title } : {}),
+            ...(visibility ? { visibility } : {}),
+          },
+          40_000,
+        )) as Record<string, unknown>;
+        show(json, r, () => out(`${r.title ?? "Untitled"} (${r.videoId}), ${r.visibility}\nWatch: ${r.viewUrl}`));
+      });
+    case "delete":
+      return withRecordful(config, logger, quiet, async (call) => {
+        if (!positional[0]) throw new BridgeError(ErrorCode.InvalidParams, "delete needs the video ID (recordful-mcp videos lists them)");
+        if (flags.yes !== true) {
+          throw new BridgeError(ErrorCode.InvalidParams, "Deleting a video is permanent. Check it is the right one, then run again with --yes.");
+        }
+        const r = (await call(Method.VideoDelete, { videoId: positional[0], confirm: true }, 40_000)) as Record<string, unknown>;
+        show(json, r, () => out(`Deleted ${r.videoId}.`));
+      });
+    case "activity":
+      return withRecordful(config, logger, quiet, async (call) => {
+        const r = (await call(Method.VideoEngagement, positional[0] ? { videoId: positional[0] } : {}, 40_000)) as {
+          videoId: string;
+          views: number;
+          likes: number;
+          comments: Array<{ author: string | null; createdAt: string; body: string }>;
+        };
+        show(json, r, () => {
+          out(`${r.views} views, ${r.likes} likes, ${r.comments.length} comments`);
+          for (const c of r.comments) out(`  ${c.author ?? "Someone"} (${c.createdAt}): ${c.body}`);
+        });
+      });
+    case "comment":
+      return withRecordful(config, logger, quiet, async (call) => {
+        if (typeof flags.body !== "string") throw new BridgeError(ErrorCode.InvalidParams, "comment needs --body <text>");
+        const r = (await call(
+          Method.VideoComment,
+          { ...(positional[0] ? { videoId: positional[0] } : {}), body: flags.body },
+          40_000,
+        )) as { comment: { id: string } };
+        show(json, r, () => out(`Posted comment ${r.comment.id}.`));
+      });
+    case "like":
+      return withRecordful(config, logger, quiet, async (call) => {
+        const r = (await call(
+          Method.VideoLike,
+          { ...(positional[0] ? { videoId: positional[0] } : {}), liked: flags.undo !== true },
+          40_000,
+        )) as { liked: boolean; likes: number };
+        show(json, r, () => out(`${r.liked ? "Liked" : "Like removed"}: ${r.likes} likes.`));
+      });
+    case "folders":
+      return withRecordful(config, logger, quiet, async (call) => {
+        const r = (await call(Method.FolderList, {}, 40_000)) as { folders: Array<Record<string, unknown>> };
+        show(json, r, () => {
+          if (!r.folders.length) return out("No folders yet.");
+          for (const f of r.folders) out(`${f.folderId}  ${f.name}${f.parentId ? `  (in ${f.parentId})` : ""}${f.shared ? "  shared" : ""}`);
+        });
+      });
+    case "folder-create":
+      return withRecordful(config, logger, quiet, async (call) => {
+        if (!positional[0]) throw new BridgeError(ErrorCode.InvalidParams, "folder-create needs a name");
+        const r = (await call(
+          Method.FolderCreate,
+          { name: positional.join(" "), ...(typeof flags.parent === "string" ? { parentId: flags.parent } : {}) },
+          40_000,
+        )) as Record<string, unknown>;
+        show(json, r, () => out(`Created ${r.name} (${r.folderId}).`));
+      });
+    case "move":
+      return withRecordful(config, logger, quiet, async (call) => {
+        if (!positional.length) throw new BridgeError(ErrorCode.InvalidParams, "move needs one or more video IDs");
+        const r = (await call(
+          Method.VideoMove,
+          { videoIds: positional, folderId: typeof flags.to === "string" ? flags.to : null },
+          40_000,
+        )) as { moved: number; skipped: string[]; note?: string };
+        show(json, r, () => {
+          out(`Moved ${r.moved} video${r.moved === 1 ? "" : "s"}.`);
+          if (r.skipped.length) note(r.note ?? `Skipped: ${r.skipped.join(", ")}`);
+        });
+      });
+    case "storage":
+      return withRecordful(config, logger, quiet, async (call) => {
+        const r = (await call(Method.StorageGet, {}, 40_000)) as { usedBytes: number; limitBytes: number; usedPercent: number | null; canUpload: boolean };
+        show(json, r, () => out(`${mb(r.usedBytes)} of ${mb(r.limitBytes)} used${r.usedPercent === null ? "" : ` (${r.usedPercent}%)`}; ${r.canUpload ? "uploads allowed" : "uploads blocked"}`));
       });
     case "call":
       return withRecordful(config, logger, quiet, async (call) => {

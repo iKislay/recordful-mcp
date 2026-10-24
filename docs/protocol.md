@@ -89,6 +89,15 @@ One authenticated session at a time: a newer authenticated connection supersedes
 | `video.upload` | `takeId?`, `title?`, `visibility?` (`private`/`workspace`/`public`), `force?` | `{videoId, takeId, title, viewUrl, editUrl, stage:"uploading", totalBytes, camera:"included"\|"skipped"\|"none"}`, or `{alreadyUploaded:true, ...}`. Answers once the video exists; the upload continues in the extension |
 | `video.get` | `videoId?` | `{videoId, title, visibility, durationSeconds, createdAt, viewUrl, editUrl, stage:"uploading"\|"processing"\|"ready"\|"failed", uploadedBytes, totalBytes, error?}` |
 | `video.list` | `limit?` (1–50, default 10), `query?` | `{videos:[{videoId, title, createdAt, durationSeconds, visibility, viewUrl, editUrl}]}` |
+| `video.update` | `videoId?`, `title?`, `visibility?` | `{videoId, title, visibility, viewUrl, editUrl}`. Needs at least one of title and visibility |
+| `video.delete` | `videoId` (required), `confirm: true` | `{deleted:true, videoId}`. No default video; refuses without `confirm` |
+| `video.engagement` | `videoId?` | `{videoId, views, likes, likedByUser, comments:[{id, body, createdAt, author}], viewUrl, editUrl}` |
+| `video.comment` | `videoId?`, `body` (1–2000 chars) | `{videoId, comment:{id, body, createdAt, author}}` |
+| `video.like` | `videoId?`, `liked?` (default true) | `{videoId, liked, likes}` |
+| `video.move` | `videoIds` (1–200), `folderId?` (null: top level) | `{folderId, moved, skipped[], note?}` |
+| `folder.list` | none | `{folders:[{folderId, name, parentId, shared}]}` |
+| `folder.create` | `name`, `parentId?` | `{folderId, name, parentId, shared}` |
+| `storage.get` | none | `{usedBytes, limitBytes, usedPercent, canUpload}` |
 | `video.transcript` | `videoId?`, `start?` (default true) | `{videoId, status:"done", text, vtt, viewUrl, editUrl}` or `{status:"working"\|"uploading"\|"none"}` or `{status:"failed", reason}`. One look; the MCP server and CLI poll it to wait |
 
 Requests run on queues in the extension: recorder methods (`recording.*`, `capture.probe`) one at a time on one queue, page methods one at a time on another, uploads on a third, and the read-only methods on none, so they never wait behind the others.
@@ -126,7 +135,7 @@ Proofs are `HMAC-SHA256(peerSecret, "recordful-agent-bridge:peer:<serverNonce>:<
 
 ## Error codes
 
-`NOT_CONNECTED`, `DISCONNECTED`, `TIMEOUT`, `BRIDGE_UNAVAILABLE`, `INVALID_PARAMS`, `PAIRING_PENDING` (with `data.code`), `PAIRING_DENIED`, `TRANSCRIPTION_FAILED` (bridge side); for video methods `NO_RECORDING`, `NOT_SIGNED_IN`, `PRO_REQUIRED`, `VIDEO_NOT_FOUND`, `NOT_UPLOADED`, `STORAGE_FULL`, `RATE_LIMITED`, `TRANSCRIPTION_UNAVAILABLE`, `UPLOAD_FAILED`, `UPLOAD_INTERRUPTED`, `CLOUD_UNAVAILABLE`, `CLOUD_UNREACHABLE`, `CLOUD_ERROR` (extension side); `UNKNOWN_METHOD`, `ALREADY_RECORDING`, `NOT_RECORDING`, `NO_TARGET_TAB`, `TAB_NOT_RECORDABLE`, `START_FAILED`, `PERMISSIONS_NEEDED`, `STOP_FAILED`, `INTERNAL`, and for page methods `NOT_ARMED`, `TAB_NOT_ACTIVE`, `PAGE_NOT_SCRIPTABLE`, `STALE_REF`, `ELEMENT_NOT_INTERACTABLE`, `ELEMENT_OBSCURED` (with `data.obscuredBy`), `NAVIGATION_FAILED`, `WAIT_TIMEOUT` (extension side). Codes are a public contract: new codes can be added, but existing ones are never repurposed.
+`NOT_CONNECTED`, `DISCONNECTED`, `TIMEOUT`, `BRIDGE_UNAVAILABLE`, `INVALID_PARAMS`, `PAIRING_PENDING` (with `data.code`), `PAIRING_DENIED`, `TRANSCRIPTION_FAILED` (bridge side); for video methods `NO_RECORDING`, `NOT_SIGNED_IN`, `PRO_REQUIRED`, `VIDEO_NOT_FOUND`, `NOT_UPLOADED`, `STORAGE_FULL`, `RATE_LIMITED`, `TRANSCRIPTION_UNAVAILABLE`, `UPLOAD_FAILED`, `UPLOAD_INTERRUPTED`, `FORBIDDEN`, `CLOUD_UNAVAILABLE`, `CLOUD_UNREACHABLE`, `CLOUD_ERROR` (extension side); `UNKNOWN_METHOD`, `ALREADY_RECORDING`, `NOT_RECORDING`, `NO_TARGET_TAB`, `TAB_NOT_RECORDABLE`, `START_FAILED`, `PERMISSIONS_NEEDED`, `STOP_FAILED`, `INTERNAL`, and for page methods `NOT_ARMED`, `TAB_NOT_ACTIVE`, `PAGE_NOT_SCRIPTABLE`, `STALE_REF`, `ELEMENT_NOT_INTERACTABLE`, `ELEMENT_OBSCURED` (with `data.obscuredBy`), `NAVIGATION_FAILED`, `WAIT_TIMEOUT` (extension side). Codes are a public contract: new codes can be added, but existing ones are never repurposed.
 
 ## Extension adapter
 

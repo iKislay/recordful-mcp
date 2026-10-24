@@ -114,6 +114,7 @@ The AI works out the flow, uses test data (never your real accounts), records wi
 | Record, drive the page, open in Recordful's editor | ✓ | ✓ |
 | Upload to recordful.app and get a link | | ✓ |
 | Read back the transcript | | ✓ |
+| Rename, set who can watch, read views, likes and comments, comment, organise into folders, delete | | ✓ |
 
 The AI checks your plan first. On the free plan it records as usual and tells you once that links and transcripts come with Pro, instead of failing. Recordings made while signed in to Pro go to the cloud as they record.
 
