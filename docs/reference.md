@@ -7,7 +7,8 @@
 | `get_status` | Connection, pairing, recorder state (`idle`, `starting`, `recording`, `paused`), recording mode, the tab handed over |
 | `start_recording` | Starts recording the handed-over tab with your Recordful settings (mode, microphone, camera, countdown); returns once capture is live |
 | `pause_recording` / `resume_recording` | Pause and resume, so thinking time stays out of the video |
-| `stop_recording` | Stops; Recordful opens its editor and the tool returns the editor tab |
+| `add_marker` | Labels this moment of the running recording, timed in the video with pauses left out |
+| `stop_recording` | Stops; Recordful opens its editor and the tool returns the editor tab and the markers |
 | `navigate` | Opens an http(s) URL in the handed-over tab and waits for it to load |
 | `snapshot` | Lists interactive elements and headings, each with a ref (`e12`), role, name, value or state, and position |
 | `click` | Glides Recordful's cursor to the element and clicks it, with a click highlight in the video |

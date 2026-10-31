@@ -5,7 +5,7 @@ description: Record a product demo video of a feature with Recordful (Chrome). U
 
 # Record a product demo with Recordful
 
-Recordful is a Chrome extension that records the browser and opens the result in its editor. The `recordful` MCP server lets you control it: recorder tools (`get_status`, `start_recording`, `pause_recording`, `resume_recording`, `stop_recording`) and page tools that act on the tab being recorded (`navigate`, `snapshot`, `click`, `type`, `press`, `scroll`, `wait_for`, `screenshot`). You don't need a browser tool of your own.
+Recordful is a Chrome extension that records the browser and opens the result in its editor. The `recordful` MCP server lets you control it: recorder tools (`get_status`, `start_recording`, `pause_recording`, `resume_recording`, `add_marker`, `stop_recording`) and page tools that act on the tab being recorded (`navigate`, `snapshot`, `click`, `type`, `press`, `scroll`, `wait_for`, `screenshot`). You don't need a browser tool of your own.
 
 If the Recordful tools aren't loaded in this session (the app needs a restart to pick up a new MCP server), use the same steps through the shell: `npx -y recordful-mcp start | pause | resume | stop`, `recordful-mcp upload`, `recordful-mcp transcript` (add `--json` for machine-readable output; `recordful-mcp guide --json` lists everything). Page actions (navigate, click, type) are MCP tools, or `recordful-mcp call page.click '{"ref":"e3"}'`. Never fall back to your own browser tool to start or stop recording.
 
@@ -41,7 +41,7 @@ If Recordful or the MCP server isn't installed, point the user to https://github
 1. `navigate` to the starting page and `snapshot` it. Make the starting state clean (signed out for a sign-in demo, no leftover data or open dialogs).
 2. `start_recording`. It uses the user's Recordful settings (mode, microphone, camera, countdown) and returns once capture is live. `NOT_ARMED` means the user needs to click the Recordful icon on that tab.
 3. Follow the shot list with the page tools. Take a fresh `snapshot` after anything that changes the page; refs from before a navigation stop working. Use `wait_for` so each result is on screen before you move on.
-4. Call `pause_recording` whenever you need to think or plan, and `resume_recording` right before the next action, so the video has no dead air.
+4. Call `pause_recording` whenever you need to think or plan, and `resume_recording` right before the next action, so the video has no dead air. Call `add_marker` with a few words at each moment worth finding again (a result appearing, an error shown); `stop_recording` returns them with their times.
 5. If something goes wrong (an error, the wrong page), pause, fix it, and resume. Start over only if the mistake would confuse viewers.
 6. `stop_recording`. Recordful opens its editor with the video.
 

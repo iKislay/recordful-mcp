@@ -26,7 +26,7 @@ Typical flow for "record feature X" (the record_feature prompt has the full vers
 4. Get to the starting page before recording: navigate(url), then snapshot() to check it loaded.
 5. Call start_recording. It uses the user's saved Recordful settings (mode, mic, camera, countdown) and returns once capture is live.
 6. Walk through the feature with the page tools: snapshot() lists the interactive elements with refs ("e12"), then click(ref), type(ref, text), press(key), scroll(...), wait_for(...). Recordful moves a visible cursor to each target and types at a human pace, so the video looks like a person using the app. Take a fresh snapshot after anything that changes the page; refs from before a navigation stop working.
-7. Call pause_recording before you stop to think or plan the next steps, and resume_recording right before acting again, so the video has no dead air. snapshot and screenshot work while paused.
+7. Call pause_recording before you stop to think or plan the next steps, and resume_recording right before acting again, so the video has no dead air. snapshot and screenshot work while paused. Call add_marker("…") at moments worth finding again (a result appearing, an error shown).
 8. Call stop_recording. Recordful opens its editor with the recording automatically.
 9. To share it or read it back (Recordful Pro): stop_recording says where the recording went. A cloud recording is already uploading; a local one uploads with upload_recording. get_video gives its links once it's ready, and get_transcript returns what was said (it transcribes on first use and waits).
 

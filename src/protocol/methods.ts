@@ -8,6 +8,7 @@ export const Method = {
   RecordingStop: "recording.stop",
   RecordingPause: "recording.pause",
   RecordingResume: "recording.resume",
+  RecordingMarker: "recording.marker",
   CaptureProbe: "capture.probe",
   // Page tools: act on the tab the user handed to Recordful (see page.ts).
   PageNavigate: "page.navigate",

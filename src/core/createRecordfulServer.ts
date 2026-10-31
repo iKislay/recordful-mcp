@@ -136,7 +136,7 @@ export const createRecordfulServer = (deps: RecordfulServerDeps): McpServer => {
     {
       title: "Stop recording",
       description:
-        'Stop the current Recordful recording. Recordful then opens its editor with the recording, exactly as when the user clicks Stop. Returns where it went: recording.kind "cloud" (Recordful Pro: already uploading, with its videoId and links) or "local" (saved on this computer as takeId; upload_recording uploads it).',
+        'Stop the current Recordful recording. Recordful then opens its editor with the recording, exactly as when the user clicks Stop. Returns where it went: recording.kind "cloud" (Recordful Pro: already uploading, with its videoId and links) or "local" (saved on this computer as takeId; upload_recording uploads it), plus the markers add_marker placed.',
       inputSchema: { timeoutMs: waitMs },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     },
@@ -169,6 +169,18 @@ export const createRecordfulServer = (deps: RecordfulServerDeps): McpServer => {
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     handle(async () => call(Method.RecordingResume, {}, 10_000)),
+  );
+
+  server.registerTool(
+    "add_marker",
+    {
+      title: "Add a marker",
+      description:
+        'Mark this moment of the running recording with a short label ("signed in", "error shown"). It is timed on the video clock, pauses left out, and stop_recording returns every marker as { atMs, label }, so you can point the user to moments or edit around them later.',
+      inputSchema: { label: z.string().trim().min(1).max(200).describe("What happens at this moment, in a few words.") },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    },
+    handle(async ({ label }: { label: string }) => call(Method.RecordingMarker, { label }, 10_000)),
   );
 
   server.registerTool(

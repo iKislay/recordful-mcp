@@ -49,6 +49,7 @@ describe("MCP tools", () => {
     const { client } = await setup();
     const { tools } = await client.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual([
+      "add_marker",
       "click",
       "comment_on_video",
       "create_folder",
@@ -188,6 +189,18 @@ describe("MCP page tools", () => {
       { method: "page.scroll", params: { direction: "down", amount: 400 } },
       { method: "page.waitFor", params: { text: "Welcome", timeoutMs: 2_000 } },
     ]);
+  });
+
+  it("add_marker sends a trimmed label and refuses an empty one", async () => {
+    const { seen, record } = recording();
+    const { client } = await setup({
+      "recording.marker": record("recording.marker", { marker: { atMs: 1200, label: "signed in" }, count: 1 }),
+    });
+    const ok = await client.callTool({ name: "add_marker", arguments: { label: "  signed in " } });
+    expect(textOf(ok)).toEqual({ marker: { atMs: 1200, label: "signed in" }, count: 1 });
+    const empty = await client.callTool({ name: "add_marker", arguments: { label: "   " } });
+    expect(empty.isError).toBe(true);
+    expect(seen).toEqual([{ method: "recording.marker", params: { label: "signed in" } }]);
   });
 
   it.each([

@@ -10,6 +10,7 @@ export const MCP_TOOLS = [
   "stop_recording",
   "pause_recording",
   "resume_recording",
+  "add_marker",
   "probe_capture",
   "navigate",
   "snapshot",
