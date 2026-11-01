@@ -73,8 +73,9 @@ One authenticated session at a time: a newer authenticated connection supersedes
 | --- | --- | --- |
 | `status.get` | — | `{state, recordingType, recordingUiTabId, recordingStartTime, activeTab, permissions, extension, editor, agent, account:{cloud, signedIn, pro, plan, email, features}, lastRecording}` |
 | `recording.start` | `tabId?` (default: the armed tab), `timeoutMs?` (1000–120000, default 30000) | `{outcome:"recording", tabId, recordingType, waitedMs, recordingStartTime}` or `{outcome:"pending", hint, ...}`. In tab capture modes (`tab`, `region`) a tab the user hasn't handed over fails at once with `NOT_ARMED` |
-| `recording.stop` | `timeoutMs?` | `{outcome:"stopped", recording:{kind:"cloud", videoId, viewUrl, editUrl} \| {kind:"local", takeId}, plan, editorTabId?, editorUrl?, hint?}`. Waits up to 20 s for a local recording to be written out |
+| `recording.stop` | `timeoutMs?` | `{outcome:"stopped", recording:{kind:"cloud", videoId, viewUrl, editUrl} \| {kind:"local", takeId}, markers:[{atMs, label}], plan, editorTabId?, editorUrl?, hint?}`. Waits up to 20 s for a local recording to be written out |
 | `recording.pause` / `recording.resume` | — | `{outcome:"paused"/"recording", changed}` |
+| `recording.marker` (4.6.27+) | `label` (1–200 characters) | `{marker:{atMs, label}, count}`. `atMs` is time into the video, pauses left out; `NOT_RECORDING` when nothing is recording |
 | `capture.probe` | `tabId?` | `{tab, recordable, tabCapture:{ok, error}, permissions, recordingType}` |
 | `page.navigate` | `url` (http/https), `timeoutMs?` (1000–60000, default 20000) | `{url, title, loaded, waitedMs, hint?}` |
 | `page.snapshot` | `scope?` (`"page"` default, or `"viewport"`) | `{tabId, url, title, viewport, scroll, boxFormat, focused, elements:[{ref, role, name, value?, checked?, disabled?, expanded?, selected?, pressed?, level?, href?, box:[x,y,w,h], offscreen?}], truncated?, note?}` |

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.0 (2026-11-01)
+
+Mark moments while recording, and let the user stop an agent from the page.
+
+- **`add_marker`**: label a moment of the running recording ("signed in", "error shown"). It's timed in the video, pauses left out, and `stop_recording` now returns every marker as `{ atMs, label }`. The instructions and the skill tell agents to mark moments worth finding again. Needs Recordful 4.6.27 or newer (`recording.marker`).
+- Recordful 4.6.27 shows a chip with a Stop button on the tab an agent is driving; Stop ends the session and the extension doesn't reconnect until the user clicks its icon again.
+- Internal: the MCP tools and prompt now live in a transport-agnostic core (`src/core`) behind a `RecorderTransport` interface, so the coming hosted connector (mcp.recordful.app) can serve the same tools. No change for users: same tools, instructions, prompt and results.
+
 ## 0.6.0 (2026-10-24)
 
 Manage what's on recordful.app, not just upload to it (Recordful Pro).
@@ -9,12 +17,6 @@ Manage what's on recordful.app, not just upload to it (Recordful Pro).
 - `list_videos` and `get_video` now include each video's `folderId`.
 - New `FORBIDDEN` error for "only the person who recorded it, or the workspace owner, can do that".
 - Needs Recordful 4.6.19 or newer and recordful.app with `GET /videos/:id/engagement` and `GET /folders`. Verified live against recordful-ee and its database: rename and privacy, like and comment, reading the activity back, folders, moving in and out, storage, delete, and that a free account and another workspace are refused where they should be.
-
-## Unreleased
-
-- **`add_marker`**: label a moment of the running recording ("signed in", "error shown"). It's timed in the video, pauses left out, and `stop_recording` now returns every marker as `{ atMs, label }`. The instructions and the skill tell agents to mark moments worth finding again. Needs Recordful 4.6.26 or newer (`recording.marker`).
-- Recordful 4.6.26 shows a chip with a Stop button on the tab an agent is driving; Stop ends the session and the extension doesn't reconnect until the user clicks its icon again.
-- Internal: the MCP tools and prompt now live in a transport-agnostic core (`src/core`) behind a `RecorderTransport` interface, so the coming hosted connector (mcp.recordful.app) can serve the same tools. No change for users: same tools, instructions, prompt and results.
 
 ## 0.5.0 (2026-10-22)
 
