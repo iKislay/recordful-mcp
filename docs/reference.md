@@ -17,7 +17,8 @@
 | `scroll` | Scrolls smoothly to an element, or by an amount in a direction |
 | `wait_for` | Waits for text or an element to appear or go away; keeps waiting across page loads |
 | `screenshot` | Returns what the tab shows right now, as an image (for the AI to look at) |
-| `take_screenshot` | Takes a Recordful screenshot of the tab (`mode`: `visible` or `page`) and opens it in Recordful's screenshot editor with the default look, or `look`: `3d` or a preset name. Returns no image |
+| `take_screenshot` | Takes a Recordful screenshot and opens it in Recordful's screenshot editor, in the default look (a wallpaper matching its colours) or `look`: `3d` or a preset name. By default the handed-over tab (`mode`: `visible` or `page`); with the desktop app, `source`: `screen` (`display`), `window` (`window`: part of a title or app name) or `area` (the user drags it). Returns no image |
+| `list_windows` | The desktop's open windows (app and title), for `take_screenshot` with `source: "window"`. Needs the Recordful desktop app with AI agents turned on |
 | `probe_capture` | Diagnostic: whether Recordful can capture the tab right now, and which permissions are granted |
 | `list_recordings` | Recordings saved on this computer, newest first, with their `takeId` and `videoId` once uploaded |
 | `upload_recording` | **Pro.** Uploads a local recording (default: the last one) and waits until it's up; returns the `videoId` and its view and edit links. Never uploads the same recording twice unless `force` |
