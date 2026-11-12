@@ -63,6 +63,7 @@ describe("MCP tools", () => {
       "list_folders",
       "list_recordings",
       "list_videos",
+      "list_windows",
       "move_videos",
       "navigate",
       "pause_recording",

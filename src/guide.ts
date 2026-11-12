@@ -21,6 +21,7 @@ export const MCP_TOOLS = [
   "wait_for",
   "screenshot",
   "take_screenshot",
+  "list_windows",
   "list_recordings",
   "upload_recording",
   "get_video",
