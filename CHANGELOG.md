@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.0 (2026-11-12)
+
+Screenshots of the whole desktop, not just a browser tab, through the Recordful desktop app. A major version: recordful-mcp now drives two Recordful apps, the Chrome extension and the desktop app.
+
+- **`take_screenshot` takes a `source`**: `"tab"` (the default, as before), or with the Recordful desktop app 2.0 `"screen"` (`display`: 1, 2… or `"main"`), `"window"` (`window`: part of a title or app name) or `"area"` (the user drags it). The screenshot opens in the app's editor with a notification naming the agent; no image comes back. CLI: `recordful-mcp screenshot --source screen|window|area [--window <name>] [--display <n>] [--look 3d]`.
+- **`list_windows`** (CLI: `recordful-mcp windows`): the desktop's open windows, app and title only.
+- **How it connects:** the user turns on Settings → AI agents → "Let AI agents take screenshots" in the desktop app once. The app then opens a localhost endpoint and writes its port and a random token to `~/.recordful/desktop-agent.json` (this user only); recordful-mcp reads it. No pairing, no icon click; requests with a browser Origin are refused. Off, or the app closed, the tool says what to ask the user.
+- **Default look:** with no `look`, a new screenshot (tab or desktop) starts on a wallpaper picked to match its colours, with rounder corners (recordful.app and the desktop app).
+- The `.mcpb` manifest now lists every tool, including the library tools from 0.6.0.
+
 ## 0.8.0 (2026-11-12)
 
 Screenshots: your AI app takes a Recordful screenshot and it opens in the screenshot editor.
