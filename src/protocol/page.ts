@@ -128,6 +128,22 @@ export const pageParams = {
   },
   [Method.PageScreenshot]: {},
   [Method.ShotTake]: {
+    source: z
+      .enum(["tab", "screen", "window", "area"])
+      .optional()
+      .describe(
+        '"tab" (default): the tab handed to Recordful in Chrome. With the Recordful desktop app: "screen" a whole display, "window" one window by name (see list_windows), "area" one the user drags.',
+      ),
+    window: z
+      .string()
+      .trim()
+      .max(200)
+      .optional()
+      .describe('For source "window": part of the window title or app name, e.g. "Figma" or "Pricing".'),
+    display: z
+      .union([z.number().int().min(1).max(16), z.literal("main")])
+      .optional()
+      .describe('For source "screen": 1 for the first display, or "main" (the default).'),
     mode: z
       .enum(["visible", "page"])
       .optional()
@@ -138,7 +154,7 @@ export const pageParams = {
       .max(40)
       .optional()
       .describe(
-        'Only if the user asked for a look: "3d" for a 3D tilt, or a preset (Clean, Window, Glass, Spotlight, Midnight, Bold, None). Leave it out for the default look.',
+        'Only if the user asked for a look: "3d" for a 3D tilt, or a preset (Clean, Window, Glass, Spotlight, Midnight, Bold, None). Leave it out otherwise: the default puts the screenshot on a wallpaper that suits its colours, with rounded corners and a shadow.',
       ),
   },
 } satisfies Record<string, z.ZodRawShape>;
