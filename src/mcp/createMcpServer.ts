@@ -5,6 +5,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Bridge } from "../bridge/BridgeServer.js";
 import type { BridgeConfig } from "../config.js";
+import { desktopCall } from "../desktop.js";
 import { createRecordfulServer } from "../core/createRecordfulServer.js";
 import type { Logger } from "../logger.js";
 import { localTransport } from "./localTransport.js";
@@ -71,4 +72,5 @@ export const createMcpServer = (deps: McpServerDeps): McpServer =>
     timeouts: deps.config,
     logger: deps.logger,
     version: deps.version,
+    desktop: desktopCall,
   });

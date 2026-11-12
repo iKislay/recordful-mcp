@@ -14,12 +14,21 @@ import type { RecorderTransport, ServerCopy, Timeouts } from "./transport.js";
 import { registerLibraryTools } from "./libraryTools.js";
 import { registerVideoTools } from "./videoTools.js";
 
+/** Calls the Recordful desktop app (src/desktop.ts); its JSON answer. */
+export type DesktopCall = (
+  route: string,
+  init?: { method?: "GET" | "POST"; body?: unknown },
+  timeoutMs?: number,
+) => Promise<Record<string, unknown>>;
+
 export interface RecordfulServerDeps {
   transport: RecorderTransport;
   copy: ServerCopy;
   timeouts: Timeouts;
   logger: Logger;
   version: string;
+  /** The desktop app, for desktop screenshots; only where the server runs on the user's computer. */
+  desktop?: DesktopCall;
 }
 
 
@@ -62,6 +71,14 @@ const tabId = z
 
 export const createRecordfulServer = (deps: RecordfulServerDeps): McpServer => {
   const { transport, copy, timeouts, logger } = deps;
+  const desktopCall: DesktopCall =
+    deps.desktop ??
+    (async () => {
+      throw new BridgeError(
+        ErrorCode.NotConnected,
+        "Desktop screenshots need recordful-mcp running on the user's computer, beside the Recordful desktop app.",
+      );
+    });
   const log = logger.child({ component: "mcp" });
 
   const server = new McpServer(
@@ -315,12 +332,40 @@ export const createRecordfulServer = (deps: RecordfulServerDeps): McpServer => {
     },
   );
 
-  pageTool(
+  server.registerTool(
     "take_screenshot",
-    Method.ShotTake,
-    "Take a Recordful screenshot",
-    "Take a screenshot of the recorded tab with Recordful and open it in Recordful's screenshot editor, styled (background, padding, shadow). Use this when the user wants a screenshot to keep or share; use screenshot only to look at the page yourself. Returns no image.",
-    { readOnlyHint: false },
+    {
+      title: "Take a Recordful screenshot",
+      description:
+        "Take a screenshot with Recordful and open it in Recordful's screenshot editor, styled (wallpaper, padding, shadow). By default the tab handed to Recordful in Chrome; with source screen, window or area, the Recordful desktop app takes it from the desktop. Use this when the user wants a screenshot to keep or share; use screenshot only to look at the page yourself. Returns no image.",
+      inputSchema: pageParams[Method.ShotTake],
+      annotations: { destructiveHint: false, idempotentHint: false, openWorldHint: true, readOnlyHint: false },
+    },
+    handle(async (args: unknown) => {
+      const { source, window, display, ...tab } = parsePageParams(Method.ShotTake, args);
+      if (!source || source === "tab") return pageCall(Method.ShotTake, tab);
+      return desktopCall(
+        "/screenshot",
+        {
+          method: "POST",
+          body: { source, window, display, look: tab.look, agent: server.server.getClientVersion()?.name },
+        },
+        // The user drags an area themselves.
+        source === "area" ? 180_000 : 30_000,
+      );
+    }),
+  );
+
+  server.registerTool(
+    "list_windows",
+    {
+      title: "List desktop windows",
+      description:
+        'List the windows open on the desktop (app and title, no pictures), for take_screenshot with source "window". Needs the Recordful desktop app with AI agents turned on in its Settings.',
+      inputSchema: {},
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    },
+    handle(async () => desktopCall("/windows")),
   );
 
   // ---- recordings: upload, videos, transcripts ------------------------------
