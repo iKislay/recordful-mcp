@@ -20,6 +20,7 @@ import { VISIBILITIES } from "./protocol/video.js";
 import { setupGuide } from "./setupGuide.js";
 import { SETUP_PROMPT } from "./setupPrompt.js";
 import { getVideoAndWait, mb, transcriptAndWait, uploadAndWait, type Call } from "./workflows.js";
+import { desktopCall } from "./desktop.js";
 
 const { version } = createRequire(import.meta.url)("../package.json") as { version: string };
 
@@ -40,6 +41,13 @@ Recording (click the Recordful icon on the tab first):
   recordful-mcp stop                   Stop; says where the recording went
   recordful-mcp screenshot [--page] [--look 3d|<preset>]
                                        Screenshot the tab and open it in Recordful's screenshot editor
+
+Desktop screenshots (Recordful desktop app, Settings → AI agents turned on):
+  recordful-mcp screenshot --source screen [--display 1] [--look 3d]
+  recordful-mcp screenshot --source window --window <name>
+  recordful-mcp screenshot --source area
+                                       Screenshot the desktop and open it in the app's editor
+  recordful-mcp windows                The desktop's open windows
 
 Videos (uploads and transcripts need Recordful Pro):
   recordful-mcp recordings             Recordings saved on this computer
@@ -353,6 +361,25 @@ const runCommand = async (command: string, parsed: Parsed, config: BridgeConfig,
         show(json, r, () => out(command === "pause" ? "Paused." : "Recording."));
       });
     case "screenshot":
+      if (typeof flags.source === "string" && flags.source !== "tab") {
+        const r = await desktopCall(
+          "/screenshot",
+          {
+            method: "POST",
+            body: {
+              source: flags.source,
+              window: typeof flags.window === "string" ? flags.window : undefined,
+              display: typeof flags.display === "string" ? Number(flags.display) || "main" : undefined,
+              look: typeof flags.look === "string" ? flags.look : undefined,
+              agent: "recordful-mcp CLI",
+            },
+          },
+          flags.source === "area" ? 180_000 : 30_000,
+        );
+        return show(json, r, () =>
+          out(r.ok ? "Screenshot open in the Recordful desktop app's editor." : "Canceled."),
+        );
+      }
       return withRecordful(config, logger, quiet, async (call) => {
         const params = parsePageParams(Method.ShotTake, {
           ...(flags.page === true ? { mode: "page" } : {}),
@@ -361,6 +388,12 @@ const runCommand = async (command: string, parsed: Parsed, config: BridgeConfig,
         const r = await call(Method.ShotTake, params, pageExtraWaitMs(Method.ShotTake, params));
         show(json, r, () => out("Screenshot open in Recordful's screenshot editor."));
       });
+    case "windows": {
+      const r = (await desktopCall("/windows")) as { windows: { app: string; title: string }[] };
+      return show(json, r, () => {
+        for (const w of r.windows) out(`${w.app}  ${w.title}`);
+      });
+    }
     case "recordings":
       return withRecordful(config, logger, quiet, async (call) => {
         const r = (await call(Method.TakesList, {})) as { takes: Array<Record<string, unknown>> };
