@@ -127,6 +127,20 @@ export const pageParams = {
       .describe("How long to wait, in milliseconds (default 10000)."),
   },
   [Method.PageScreenshot]: {},
+  [Method.ShotTake]: {
+    mode: z
+      .enum(["visible", "page"])
+      .optional()
+      .describe('"visible" (default): what is on screen. "page": the whole page, scrolled and stitched.'),
+    look: z
+      .string()
+      .trim()
+      .max(40)
+      .optional()
+      .describe(
+        'Only if the user asked for a look: "3d" for a 3D tilt, or a preset (Clean, Window, Glass, Spotlight, Midnight, Bold, None). Leave it out for the default look.',
+      ),
+  },
 } satisfies Record<string, z.ZodRawShape>;
 
 export type PageMethod = keyof typeof pageParams;
@@ -180,6 +194,9 @@ export const pageExtraWaitMs = (method: PageMethod, params: Record<string, unkno
       return typeof params.timeoutMs === "number" ? params.timeoutMs : 10_000;
     case Method.PageScroll:
       return 5_000;
+    case Method.ShotTake:
+      // A full page is captured at most twice a second, frame by frame.
+      return params.mode === "page" ? 60_000 : 10_000;
     default:
       return 0;
   }

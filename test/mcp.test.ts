@@ -74,6 +74,7 @@ describe("MCP tools", () => {
       "snapshot",
       "start_recording",
       "stop_recording",
+      "take_screenshot",
       "type",
       "update_video",
       "upload_recording",
@@ -244,6 +245,15 @@ describe("MCP page tools", () => {
     const content = result.content as Array<Record<string, unknown>>;
     expect(content[0]).toEqual({ type: "image", data: "aGVsbG8=", mimeType: "image/jpeg" });
     expect(JSON.parse(content[1]!.text as string)).toEqual({ width: 1280, height: 800 });
+  });
+
+  it("take_screenshot sends mode and look, and returns no image", async () => {
+    const calls: unknown[] = [];
+    const { client } = await setup({ "shot.take": (p: unknown) => (calls.push(p), { ok: true }) });
+    const result = await client.callTool({ name: "take_screenshot", arguments: { mode: "page", look: "3d" } });
+    expect(result.isError).toBeFalsy();
+    expect(calls).toEqual([{ mode: "page", look: "3d" }]);
+    expect((result.content as Array<{ type: string }>).every((c) => c.type === "text")).toBe(true);
   });
 
   it("passes page errors through with their codes", async () => {

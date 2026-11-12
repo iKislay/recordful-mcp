@@ -16,7 +16,8 @@
 | `press` | Presses a key (Enter, Tab, Escape, arrows, `Shift+Tab`, `Control+a`…) and performs its usual effect |
 | `scroll` | Scrolls smoothly to an element, or by an amount in a direction |
 | `wait_for` | Waits for text or an element to appear or go away; keeps waiting across page loads |
-| `screenshot` | Returns what the tab shows right now, as an image |
+| `screenshot` | Returns what the tab shows right now, as an image (for the AI to look at) |
+| `take_screenshot` | Takes a Recordful screenshot of the tab (`mode`: `visible` or `page`) and opens it in Recordful's screenshot editor with the default look, or `look`: `3d` or a preset name. Returns no image |
 | `probe_capture` | Diagnostic: whether Recordful can capture the tab right now, and which permissions are granted |
 | `list_recordings` | Recordings saved on this computer, newest first, with their `takeId` and `videoId` once uploaded |
 | `upload_recording` | **Pro.** Uploads a local recording (default: the last one) and waits until it's up; returns the `videoId` and its view and edit links. Never uploads the same recording twice unless `force` |

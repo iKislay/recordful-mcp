@@ -85,6 +85,7 @@ One authenticated session at a time: a newer authenticated connection supersedes
 | `page.scroll` | `ref`, or `direction` (`up`/`down`/`left`/`right`) with `amount?` px | `{scrolledTo, box}` or `{scrolled, position, container, atEnd}` |
 | `page.waitFor` | `text` or `ref`, `state?` (`visible`/`hidden`), `timeoutMs?` (100–60000, default 10000) | `{satisfied:true, waitedMs}` or error `WAIT_TIMEOUT` |
 | `page.screenshot` | — | `{mimeType:"image/jpeg", data (base64), width, height, scale, tabId, url, title}` |
+| `shot.take` | `{mode?: "visible"\|"page", look?: string}` | `{ok: true, openedIn: "screenshot editor"}`; opens recordful.app/editor/shot with `&look=` when given |
 | `account.get` | — | `{cloud, signedIn, pro, plan, email, site, features}` |
 | `takes.list` | — | `{takes:[{takeId, bytes, recordedAt, uploadedVideoId, isLastRecording}]}` |
 | `video.upload` | `takeId?`, `title?`, `visibility?` (`private`/`workspace`/`public`), `force?` | `{videoId, takeId, title, viewUrl, editUrl, stage:"uploading", totalBytes, camera:"included"\|"skipped"\|"none"}`, or `{alreadyUploaded:true, ...}`. Answers once the video exists; the upload continues in the extension |

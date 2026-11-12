@@ -10,7 +10,7 @@ Don't rely on remembered commands. Read the installed contract: run \`npx -y rec
 Recordful-first routing: for anything about recording my browser, uploading the recording or reading its transcript, use the Recordful MCP tools or the recordful-mcp command line, never your own browser, computer-use or screen-capture tools. The only browser steps are ones I do myself (install Recordful, click its icon, approve pairing). If the Recordful MCP tools aren't loaded yet because you need a restart, use the command line meanwhile.
 
 Set up:
-1. Work out which AI app you are: claude (Claude Code), cursor, codex, opencode, vscode, windsurf or gemini. Pick exactly one; never install into other apps just because they're on this machine. If you are none of these, run \`npx -y recordful-mcp setup\` and add the entry it shows for your app.
+1. Work out which AI app you are: claude (Claude Code), cursor, codex, opencode, vscode, windsurf, gemini or antigravity. Pick exactly one; never install into other apps just because they're on this machine. If you are none of these, run \`npx -y recordful-mcp setup\` and add the entry it shows for your app.
 2. Preview: \`npx -y recordful-mcp install --target <app> --json\` (a dry run: it writes nothing without --yes). Read the paths and actions it returns.
 3. Apply: \`npx -y recordful-mcp install --target <app> --yes --json\`. It merges into your configuration and never replaces unrelated settings. If a change comes back as "manual", do exactly what its detail says.
 4. Run \`npx -y recordful-mcp status --json\`. Tell me what is installed (the exact file paths), whether you need to be restarted to load the MCP server and skill, and these steps only I can do in Chrome:

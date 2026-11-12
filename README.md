@@ -6,7 +6,7 @@ Ask your AI to *"record how the new sign-up flow works"*. It plans a short walkt
 
 It ships as an **MCP server** for AI apps and a **CLI** for anything with a shell.
 
-Works with Claude Code, Claude Desktop, Cursor, VS Code, Windsurf, opencode, Codex, Gemini CLI and any other app that supports the [Model Context Protocol](https://modelcontextprotocol.io). The AI doesn't need a browser of its own. Everything runs on your computer: nothing to host, no account, no API key.
+Works with Claude Code, Claude Desktop, Cursor, VS Code, Windsurf, opencode, Codex, Gemini CLI, Antigravity and any other app that supports the [Model Context Protocol](https://modelcontextprotocol.io). The AI doesn't need a browser of its own. Everything runs on your computer: nothing to host, no account, no API key.
 
 ## Install
 
@@ -17,7 +17,7 @@ You need Chrome and [Node.js](https://nodejs.org) 20.10 or newer. The Claude Des
 **2. Add Recordful to your AI app.** The fastest ways:
 
 - **Let the AI do it.** Run `npx -y recordful-mcp prompt` (or copy it from the [help center](https://help.recordful.app/docs/ai-agents/setup-prompt)) and paste the result into your AI app. It installs the server and skill for itself, tells you what needs a restart, and asks what to record first.
-- **One command.** `npx -y recordful-mcp install --target claude` (also `cursor`, `codex`, `opencode`, `vscode`, `windsurf`, `gemini`) shows what it would change; add `--yes` to apply. It merges into the app's own config and never replaces your other servers.
+- **One command.** `npx -y recordful-mcp install --target claude` (also `cursor`, `codex`, `opencode`, `vscode`, `windsurf`, `gemini`, `antigravity`) shows what it would change; add `--yes` to apply. It merges into the app's own config and never replaces your other servers.
 
 Or add it by hand:
 
@@ -45,9 +45,9 @@ Download `recordful.mcpb` from the [latest release](https://github.com/iKislay/r
 </details>
 
 <details>
-<summary><b>Cursor, Windsurf, Gemini CLI and most others</b></summary>
+<summary><b>Cursor, Windsurf, Gemini CLI, Antigravity and most others</b></summary>
 
-Add to the app's MCP config: `~/.cursor/mcp.json`, `~/.codeium/windsurf/mcp_config.json`, `~/.gemini/settings.json`, and so on:
+Add to the app's MCP config: `~/.cursor/mcp.json`, `~/.codeium/windsurf/mcp_config.json`, `~/.gemini/settings.json`, `~/.gemini/antigravity/mcp_config.json` (Antigravity), and so on:
 
 ```json
 { "mcpServers": { "recordful": { "command": "npx", "args": ["-y", "recordful-mcp"] } } }
@@ -103,6 +103,7 @@ Ask in plain words:
 - "Record a demo of signing up and signing in on localhost:3000."
 - "I just built the billing page. Record a short video of how it works."
 
+- "Take a screenshot of the pricing page." / "Screenshot the whole page with a 3D look." Recordful opens it in its screenshot editor, in your usual look unless you ask for another.
 - "Upload that and give me the link." / "What did I say in the last recording?" (Recordful Pro)
 
 The AI works out the flow, uses test data (never your real accounts), records with pauses while it thinks, and stops so the editor opens. Apps that support MCP prompts also offer **record_feature**, a guided version of this workflow. While an app is connected, Recordful's icon shows an **AI** badge.

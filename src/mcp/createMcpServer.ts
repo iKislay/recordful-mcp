@@ -30,6 +30,8 @@ Typical flow for "record feature X" (the record_feature prompt has the full vers
 8. Call stop_recording. Recordful opens its editor with the recording automatically.
 9. To share it or read it back (Recordful Pro): stop_recording says where the recording went. A cloud recording is already uploading; a local one uploads with upload_recording. get_video gives its links once it's ready, and get_transcript returns what was said (it transcribes on first use and waits).
 
+Screenshots to keep or share: after the icon click, navigate if needed, then take_screenshot (mode "page" for the whole page). Pass look only if the user asked for one ("3d" for a 3D tilt, or a preset name); otherwise their default look is used. It opens in Recordful's screenshot editor and returns no image, so you don't need screenshot to check it.
+
 Free and Pro:
 - Every plan: recording, page tools, and Recordful's editor (the video is saved on this computer and opens there).
 - Recordful Pro only: uploads, cloud videos (list_videos, get_video) and transcripts (get_transcript).

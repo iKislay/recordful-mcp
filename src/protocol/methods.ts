@@ -19,6 +19,8 @@ export const Method = {
   PageScroll: "page.scroll",
   PageWaitFor: "page.waitFor",
   PageScreenshot: "page.screenshot",
+  // A Recordful screenshot of that tab, opened in the screenshot editor.
+  ShotTake: "shot.take",
   // Recordings once they exist: uploads, cloud videos, transcripts (see video.ts).
   AccountGet: "account.get",
   TakesList: "takes.list",

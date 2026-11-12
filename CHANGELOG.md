@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **`take_screenshot`** (CLI: `recordful-mcp screenshot [--page] [--look 3d]`): a Recordful screenshot of the handed-over tab, visible part or whole page, opened in Recordful's screenshot editor in the user's usual look, or `look: "3d"` / a preset name when they ask for one. Returns no image, so it costs a few tokens. Needs a Recordful build with `shot.take` and the web editor's `?look=`.
+- `install --target antigravity` writes `~/.gemini/antigravity/mcp_config.json`.
+
 ## 0.7.0 (2026-11-01)
 
 Mark moments while recording, and let the user stop an agent from the page.

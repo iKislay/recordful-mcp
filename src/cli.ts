@@ -38,6 +38,8 @@ Recording (click the Recordful icon on the tab first):
   recordful-mcp start [--tab <id>]     Start recording with your Recordful settings
   recordful-mcp pause | resume         Pause or resume
   recordful-mcp stop                   Stop; says where the recording went
+  recordful-mcp screenshot [--page] [--look 3d|<preset>]
+                                       Screenshot the tab and open it in Recordful's screenshot editor
 
 Videos (uploads and transcripts need Recordful Pro):
   recordful-mcp recordings             Recordings saved on this computer
@@ -349,6 +351,15 @@ const runCommand = async (command: string, parsed: Parsed, config: BridgeConfig,
       return withRecordful(config, logger, quiet, async (call) => {
         const r = (await call(command === "pause" ? Method.RecordingPause : Method.RecordingResume, {}, 10_000)) as Record<string, unknown>;
         show(json, r, () => out(command === "pause" ? "Paused." : "Recording."));
+      });
+    case "screenshot":
+      return withRecordful(config, logger, quiet, async (call) => {
+        const params = parsePageParams(Method.ShotTake, {
+          ...(flags.page === true ? { mode: "page" } : {}),
+          ...(typeof flags.look === "string" ? { look: flags.look } : {}),
+        }) as Record<string, unknown>;
+        const r = await call(Method.ShotTake, params, pageExtraWaitMs(Method.ShotTake, params));
+        show(json, r, () => out("Screenshot open in Recordful's screenshot editor."));
       });
     case "recordings":
       return withRecordful(config, logger, quiet, async (call) => {

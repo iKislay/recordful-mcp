@@ -1,6 +1,6 @@
 ---
 name: record-demo
-description: Record a product demo video of a feature with Recordful (Chrome). Use when the user asks to record, film or make a video or demo of a feature, flow or page ("record how sign-in works", "make a demo of the new billing page", "record the feature you just built"), including right after you built the feature.
+description: Record a product demo video of a feature with Recordful (Chrome). Use when the user asks to record, film or make a video or demo of a feature, flow or page ("record how sign-in works", "make a demo of the new billing page", "record the feature you just built"), including right after you built the feature. Also for a Recordful screenshot of a page ("screenshot the pricing page", "take a 3D screenshot").
 ---
 
 # Record a product demo with Recordful
@@ -63,3 +63,7 @@ On `"free"` or `"signed-out"`, don't call these. Recording and the editor work o
 ## 8. Wrap up
 
 Tell the user the video is open in Recordful's editor (and its link, on Pro), and summarise what it shows in one or two sentences.
+
+## Screenshots
+
+For "take a screenshot of X": ask for the icon click (step 5), `navigate` to the page if needed, then call `take_screenshot` once. Use `mode: "page"` for the whole page. Pass `look` only if the user asked for a look: `"3d"` for a 3D tilt, or a preset (Clean, Window, Glass, Spotlight, Midnight, Bold, None); otherwise leave it out and their default look is used. It opens in Recordful's screenshot editor and returns no image, so don't take another screenshot to check it. Tell the user it is open there.

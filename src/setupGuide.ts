@@ -37,6 +37,9 @@ Codex CLI  (~/.codex/config.toml)
 Gemini CLI  (~/.gemini/settings.json)
   { "mcpServers": { "recordful": { "command": "npx", "args": ["-y", "recordful-mcp"] } } }
 
+Antigravity  (~/.gemini/antigravity/mcp_config.json, or Manage MCP Servers → View raw config)
+  { "mcpServers": { "recordful": { "command": "npx", "args": ["-y", "recordful-mcp"] } } }
+
 Any other app that runs local (stdio) MCP servers: command "npx", arguments "-y recordful-mcp".
 
 Then, in Chrome:

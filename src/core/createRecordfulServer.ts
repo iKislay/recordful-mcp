@@ -315,6 +315,14 @@ export const createRecordfulServer = (deps: RecordfulServerDeps): McpServer => {
     },
   );
 
+  pageTool(
+    "take_screenshot",
+    Method.ShotTake,
+    "Take a Recordful screenshot",
+    "Take a screenshot of the recorded tab with Recordful and open it in Recordful's screenshot editor, styled (background, padding, shadow). Use this when the user wants a screenshot to keep or share; use screenshot only to look at the page yourself. Returns no image.",
+    { readOnlyHint: false },
+  );
+
   // ---- recordings: upload, videos, transcripts ------------------------------
 
   const handleTool = async (fn: () => Promise<unknown>) => {

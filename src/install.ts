@@ -8,7 +8,7 @@ import { homedir, platform } from "node:os";
 import { dirname, join } from "node:path";
 import { SKILL_TEXT } from "./skill.js";
 
-export const TARGETS = ["claude", "cursor", "codex", "opencode", "vscode", "windsurf", "gemini"] as const;
+export const TARGETS = ["claude", "cursor", "codex", "opencode", "vscode", "windsurf", "gemini", "antigravity"] as const;
 export type Target = (typeof TARGETS)[number];
 export const COMPONENTS = ["all", "mcp", "skill"] as const;
 export type Component = (typeof COMPONENTS)[number];
@@ -21,6 +21,7 @@ export const TARGET_NAMES: Record<Target, string> = {
   vscode: "VS Code",
   windsurf: "Windsurf",
   gemini: "Gemini CLI",
+  antigravity: "Antigravity",
 };
 
 export interface Change {
@@ -169,6 +170,8 @@ const installMcp = (target: Target, apply: boolean): Change => {
       return mergeJson(join(home(), ".codeium", "windsurf", "mcp_config.json"), "mcpServers", { command: "npx", args: NPX_ARGS }, apply);
     case "gemini":
       return mergeJson(join(home(), ".gemini", "settings.json"), "mcpServers", { command: "npx", args: NPX_ARGS }, apply);
+    case "antigravity":
+      return mergeJson(join(home(), ".gemini", "antigravity", "mcp_config.json"), "mcpServers", { command: "npx", args: NPX_ARGS }, apply);
     case "vscode":
       return mergeJson(join(vscodeUserDir(), "mcp.json"), "servers", { type: "stdio", command: "npx", args: NPX_ARGS }, apply);
     case "opencode":
@@ -191,6 +194,7 @@ const RESTART: Record<Target, string> = {
   vscode: 'In VS Code, run "MCP: List Servers" and start recordful (or reload the window).',
   windsurf: "Restart Windsurf (or refresh MCP servers in Cascade).",
   gemini: "Restart Gemini CLI, then run /mcp to check the server.",
+  antigravity: "In Antigravity, open Manage MCP Servers and refresh (or restart Antigravity).",
 };
 
 export const install = (target: Target, opts: { apply: boolean; component?: Component }): InstallResult => {
