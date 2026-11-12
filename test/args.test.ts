@@ -25,6 +25,15 @@ describe("parseArgs", () => {
   });
 });
 
+describe("desktop screenshot flags", () => {
+  it("reads --source, --window and --display as values", () => {
+    expect(parseArgs(["screenshot", "--source", "window", "--window", "Figma", "--display", "2"])).toEqual({
+      positional: ["screenshot"],
+      flags: { source: "window", window: "Figma", display: "2" },
+    });
+  });
+});
+
 describe("intFlag", () => {
   it("parses positive whole numbers only", () => {
     expect(intFlag({ limit: "5" }, "limit")).toBe(5);
