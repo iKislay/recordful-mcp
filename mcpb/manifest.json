@@ -107,6 +107,50 @@
     {
       "name": "get_transcript",
       "description": "Read back what was said in a video (Pro)"
+    },
+    {
+      "name": "take_screenshot",
+      "description": "Take a Recordful screenshot of the tab, or with the desktop app a screen, window or area, and open it in the screenshot editor"
+    },
+    {
+      "name": "list_windows",
+      "description": "The desktop's open windows, for a window screenshot (Recordful desktop app)"
+    },
+    {
+      "name": "update_video",
+      "description": "Rename a video or change who may watch it (Pro)"
+    },
+    {
+      "name": "get_video_activity",
+      "description": "A video's views, likes and comments (Pro)"
+    },
+    {
+      "name": "comment_on_video",
+      "description": "Comment on a video (Pro)"
+    },
+    {
+      "name": "like_video",
+      "description": "Like or unlike a video (Pro)"
+    },
+    {
+      "name": "list_folders",
+      "description": "The workspace's folders (Pro)"
+    },
+    {
+      "name": "create_folder",
+      "description": "Make a folder (Pro)"
+    },
+    {
+      "name": "move_videos",
+      "description": "File videos into a folder (Pro)"
+    },
+    {
+      "name": "delete_video",
+      "description": "Move a video to the trash; needs the exact video and confirm (Pro)"
+    },
+    {
+      "name": "get_storage",
+      "description": "Cloud storage used and left (Pro)"
     }
   ],
   "prompts_generated": true,
