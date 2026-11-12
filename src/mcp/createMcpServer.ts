@@ -31,7 +31,9 @@ Typical flow for "record feature X" (the record_feature prompt has the full vers
 8. Call stop_recording. Recordful opens its editor with the recording automatically.
 9. To share it or read it back (Recordful Pro): stop_recording says where the recording went. A cloud recording is already uploading; a local one uploads with upload_recording. get_video gives its links once it's ready, and get_transcript returns what was said (it transcribes on first use and waits).
 
-Screenshots to keep or share: after the icon click, navigate if needed, then take_screenshot (mode "page" for the whole page). Pass look only if the user asked for one ("3d" for a 3D tilt, or a preset name); otherwise their default look is used. It opens in Recordful's screenshot editor and returns no image, so you don't need screenshot to check it.
+Screenshots to keep or share: after the icon click, navigate if needed, then take_screenshot (mode "page" for the whole page). Pass look only if the user asked for one ("3d" for a 3D tilt, or a preset name); otherwise their default look is used: a wallpaper picked to match the screenshot's colours. It opens in Recordful's screenshot editor and returns no image, so you don't need screenshot to check it.
+
+Screenshots of the desktop, not a browser tab (another app, the whole screen, a window): take_screenshot with source "screen" (display 1, 2… or "main"), "window" (window: part of its title or app name; list_windows shows what's open) or "area" (the user drags it). This needs the Recordful desktop app with Settings → AI agents → "Let AI agents take screenshots" turned on; no icon click. If it isn't on, ask the user to turn it on. The screenshot opens in the app's editor and the user sees a notification naming you.
 
 Free and Pro:
 - Every plan: recording, page tools, and Recordful's editor (the video is saved on this computer and opens there).
