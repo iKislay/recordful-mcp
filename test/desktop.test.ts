@@ -66,7 +66,7 @@ describe("desktopCall", () => {
   it("sends the token, and takes a 401 as turned off", async () => {
     await startApp(401, { error: "unauthorized" });
     await expect(desktopCall("/status")).rejects.toMatchObject({ code: "NOT_CONNECTED" });
-    expect(seen[0].auth).toBe("Bearer t0ken");
+    expect(seen[0]?.auth).toBe("Bearer t0ken");
   });
 });
 
