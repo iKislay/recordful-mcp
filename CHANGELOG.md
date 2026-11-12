@@ -1,8 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.8.0 (2026-11-12)
 
-- **`take_screenshot`** (CLI: `recordful-mcp screenshot [--page] [--look 3d]`): a Recordful screenshot of the handed-over tab, visible part or whole page, opened in Recordful's screenshot editor in the user's usual look, or `look: "3d"` / a preset name when they ask for one. Returns no image, so it costs a few tokens. Needs a Recordful build with `shot.take` and the web editor's `?look=`.
+Screenshots: your AI app takes a Recordful screenshot and it opens in the screenshot editor.
+
+- **`take_screenshot`** (CLI: `recordful-mcp screenshot [--page] [--look 3d]`): a Recordful screenshot of the handed-over tab, visible part or whole page, opened in Recordful's screenshot editor in the user's usual look, or `look: "3d"` / a preset name when they ask for one. Returns no image, so it costs a few tokens. Needs Recordful 4.6.33 or newer (`shot.take`). The AI's cursor and Stop chip stay out of the picture.
 - `install --target antigravity` writes `~/.gemini/antigravity/mcp_config.json`.
 
 ## 0.7.0 (2026-11-01)
