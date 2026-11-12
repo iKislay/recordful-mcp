@@ -103,7 +103,8 @@ Ask in plain words:
 - "Record a demo of signing up and signing in on localhost:3000."
 - "I just built the billing page. Record a short video of how it works."
 
-- "Take a screenshot of the pricing page." / "Screenshot the whole page with a 3D look." Recordful opens it in its screenshot editor, in your usual look unless you ask for another.
+- "Take a screenshot of the pricing page." / "Screenshot the whole page with a 3D look." Recordful opens it in its screenshot editor, in your usual look unless you ask for another. With no look of your own, it starts on a wallpaper picked to match the screenshot's colours.
+- "Screenshot my Figma window." / "Take a screenshot of my whole screen." With the [Recordful desktop app](https://recordful.app/download), your AI screenshots the desktop too: a screen, a window by name, or an area you drag. Turn it on once in the app: **Settings → AI agents → Let AI agents take screenshots**. Each screenshot opens in the app's editor, with a notification naming the AI that took it.
 - "Upload that and give me the link." / "What did I say in the last recording?" (Recordful Pro)
 
 The AI works out the flow, uses test data (never your real accounts), records with pauses while it thinks, and stops so the editor opens. Apps that support MCP prompts also offer **record_feature**, a guided version of this workflow. While an app is connected, Recordful's icon shows an **AI** badge.
