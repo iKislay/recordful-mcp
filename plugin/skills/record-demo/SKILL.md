@@ -67,3 +67,5 @@ Tell the user the video is open in Recordful's editor (and its link, on Pro), an
 ## Screenshots
 
 For "take a screenshot of X": ask for the icon click (step 5), `navigate` to the page if needed, then call `take_screenshot` once. Use `mode: "page"` for the whole page. Pass `look` only if the user asked for a look: `"3d"` for a 3D tilt, or a preset (Clean, Window, Glass, Spotlight, Midnight, Bold, None); otherwise leave it out and their default look is used. It opens in Recordful's screenshot editor and returns no image, so don't take another screenshot to check it. Tell the user it is open there.
+
+For a screenshot of something outside the browser ("my Figma window", "my whole screen"): no icon click. Call `take_screenshot` with `source: "window"` and `window` set to part of its title or app name (call `list_windows` if unsure), `source: "screen"` (optionally `display: 2`), or `source: "area"` to let the user drag one. It needs the Recordful desktop app with Settings → AI agents → "Let AI agents take screenshots" on; if the tool says it isn't on, ask the user to turn it on and retry.
