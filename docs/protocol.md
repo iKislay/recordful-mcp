@@ -89,9 +89,9 @@ One authenticated session at a time: a newer authenticated connection supersedes
 | `account.get` | — | `{cloud, signedIn, pro, plan, email, site, features}` |
 | `takes.list` | — | `{takes:[{takeId, bytes, recordedAt, uploadedVideoId, isLastRecording}]}` |
 | `video.upload` | `takeId?`, `title?`, `visibility?` (`private`/`workspace`/`public`), `force?` | `{videoId, takeId, title, viewUrl, editUrl, stage:"uploading", totalBytes, camera:"included"\|"skipped"\|"none"}`, or `{alreadyUploaded:true, ...}`. Answers once the video exists; the upload continues in the extension |
-| `video.get` | `videoId?` | `{videoId, title, visibility, durationSeconds, createdAt, viewUrl, editUrl, stage:"uploading"\|"processing"\|"ready"\|"failed", uploadedBytes, totalBytes, error?}` |
+| `video.get` | `videoId?` | `{videoId, title, visibility, durationSeconds, createdAt, folderId, passwordProtected, linkExpiresAt, viewUrl, editUrl, stage:"uploading"\|"processing"\|"ready"\|"failed", uploadedBytes, totalBytes, error?}` |
 | `video.list` | `limit?` (1–50, default 10), `query?` | `{videos:[{videoId, title, createdAt, durationSeconds, visibility, viewUrl, editUrl}]}` |
-| `video.update` | `videoId?`, `title?`, `visibility?` | `{videoId, title, visibility, viewUrl, editUrl}`. Needs at least one of title and visibility |
+| `video.update` | `videoId?`, `title?`, `visibility?`, `password?` (1–200 chars, null removes), `expiresAt?` (future ISO time, null never) | `{videoId, title, visibility, passwordProtected, linkExpiresAt, viewUrl, editUrl}`. Needs at least one change. The password is never returned |
 | `video.delete` | `videoId` (required), `confirm: true` | `{deleted:true, videoId, inTrash:true, note}`. Moves it to trash (gone for good after 7 days). No default video; refuses without `confirm` |
 | `video.restore` | `videoId` (required) | `{restored:true, videoId, viewUrl, editUrl}` |
 | `trash.list` | none | `{trashDays, videos:[{videoId, title, kind, deletedAt, purgesAt, durationSeconds}]}` |

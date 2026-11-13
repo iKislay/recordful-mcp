@@ -58,7 +58,7 @@ const COMMANDS: CommandInfo[] = [
   { command: "videos [--limit n] [--query text]", summary: "List the user's videos on recordful.app", pro: true, needsRecordful: true },
   { command: "video [<videoId>] [--wait]", summary: "One video's links and upload stage", pro: true, needsRecordful: true },
   { command: "transcript [<videoId>] [--format text|vtt|json] [--query <words>] [--no-wait]", summary: "Print what was said (starts transcription on first use); --query prints only the matching moments with times", pro: true, needsRecordful: true },
-  { command: "update [<videoId>] [--title t] [--visibility private|workspace|public]", summary: "Rename a video or change who may watch (show the user first)", pro: true, needsRecordful: true },
+  { command: "update [<videoId>] [--title t] [--visibility private|workspace|public] [--password-stdin|--no-password] [--expires <ISO>|--no-expiry]", summary: "Rename a video, change who may watch, or lock its link with a password (read from stdin) or an expiry (show the user first)", pro: true, needsRecordful: true },
   { command: "delete <videoId> --yes", summary: "Move a video to trash; it's gone for good after 7 days (confirm the exact video with the user first)", pro: true, needsRecordful: true },
   { command: "trash", summary: "Videos in trash and when each is gone for good", pro: true, needsRecordful: true },
   { command: "restore <videoId>", summary: "Bring a video back out of trash", pro: true, needsRecordful: true },

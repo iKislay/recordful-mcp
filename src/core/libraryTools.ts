@@ -18,7 +18,7 @@ export const registerLibraryTools = (server: McpServer, call: Call, handle: Hand
     "update_video",
     {
       title: "Rename a video or change who can watch",
-      description: `${PRO} Change a video's title and/or who may watch it: "private" (only the user), "workspace" (their team) or "public" (anyone with the link). ${ASK} Defaults to the last recording. Only the person who recorded it, or the workspace owner, can.`,
+      description: `${PRO} Change a video's title and/or who may watch it: "private" (only the user), "workspace" (their team) or "public" (anyone with the link). It can also lock the share link for people outside the workspace: password (null removes it; use only a password the user gave you, never invent one) and expiresAt (null: never). Returns passwordProtected and linkExpiresAt, never the password. ${ASK} Defaults to the last recording. Only the person who recorded it, or the workspace owner, can.`,
       inputSchema: videoParams.update,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },

@@ -106,6 +106,29 @@ describe("library tools", () => {
     expect(deletes).toBe(1);
   });
 
+  it("locks a link with a password and a future expiry, and rejects bad ones", async () => {
+    const sent: unknown[] = [];
+    const client = await setup({
+      "video.update": (p) => {
+        sent.push(p);
+        return { videoId: VIDEO, passwordProtected: p.password !== null, linkExpiresAt: p.expiresAt ?? null };
+      },
+    });
+    const later = new Date(Date.now() + 86_400_000).toISOString();
+    const ok = json(await client.callTool({ name: "update_video", arguments: { password: "s3cret", expiresAt: later } }));
+    expect(ok).toMatchObject({ passwordProtected: true, linkExpiresAt: later });
+    expect(JSON.stringify(ok)).not.toContain("s3cret");
+    await client.callTool({ name: "update_video", arguments: { password: null, expiresAt: null } });
+
+    const bad = await Promise.all([
+      client.callTool({ name: "update_video", arguments: { password: "" } }),
+      client.callTool({ name: "update_video", arguments: { expiresAt: "2001-01-01T00:00:00Z" } }),
+      client.callTool({ name: "update_video", arguments: { expiresAt: "next week" } }),
+    ]);
+    expect(bad.every((r) => r.isError)).toBe(true);
+    expect(sent).toEqual([{ password: "s3cret", expiresAt: later }, { password: null, expiresAt: null }]);
+  });
+
   it("lists trash and restores a named video only", async () => {
     const restored: unknown[] = [];
     const client = await setup({

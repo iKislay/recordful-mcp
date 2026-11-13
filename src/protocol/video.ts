@@ -44,6 +44,19 @@ export const videoParams = {
     videoId: VideoId.optional(),
     title: z.string().trim().min(1).max(200).optional().describe("New title."),
     visibility: z.enum(VISIBILITIES).optional().describe('Who may watch: "private", "workspace" (their team) or "public" (anyone with the link).'),
+    password: z
+      .string()
+      .min(1)
+      .max(200)
+      .nullable()
+      .optional()
+      .describe("A password people outside the workspace must type to watch, exactly as the user gave it; null removes it. It is never shown back."),
+    expiresAt: z.iso
+      .datetime({ offset: true })
+      .refine((at) => Date.parse(at) > Date.now(), "expiresAt must be in the future")
+      .nullable()
+      .optional()
+      .describe("When the share link stops working for people outside the workspace (ISO 8601, in the future); null means never."),
   },
   remove: {
     videoId: z.string().regex(/^[0-9a-f-]{36}$/i, "videoId must be a Recordful video ID").describe("The video to delete. Required: there is no default for a delete."),

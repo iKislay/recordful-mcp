@@ -16,7 +16,7 @@ import { createMcpServer } from "./mcp/createMcpServer.js";
 import { BridgeError, ErrorCode } from "./protocol/errors.js";
 import { isMethod, Method, METHODS } from "./protocol/methods.js";
 import { isPageMethod, pageExtraWaitMs, parsePageParams } from "./protocol/page.js";
-import { VISIBILITIES } from "./protocol/video.js";
+import { parseVideoParams, VISIBILITIES, videoParams } from "./protocol/video.js";
 import { setupGuide } from "./setupGuide.js";
 import { SETUP_PROMPT } from "./setupPrompt.js";
 import { getVideoAndWait, mb, transcriptAndWait, uploadAndWait, type Call } from "./workflows.js";
@@ -63,6 +63,7 @@ Videos (uploads and transcripts need Recordful Pro):
 
 Manage videos, comments and folders (Recordful Pro; change things only when the user asked):
   recordful-mcp update [<videoId>] [--title <t>] [--visibility private|workspace|public]
+                     [--password-stdin | --no-password] [--expires <ISO time> | --no-expiry]
   recordful-mcp delete <videoId> --yes      To trash for 7 days; --yes confirms this exact video
   recordful-mcp trash                       Deleted videos
   recordful-mcp restore <videoId>           Bring one back out of trash
@@ -99,6 +100,12 @@ const openStore = (config: BridgeConfig) =>
 // ---- output ------------------------------------------------------------------
 
 const out = (line = "") => process.stdout.write(`${line}\n`);
+
+const readStdin = async () => {
+  const chunks: Buffer[] = [];
+  for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
+  return Buffer.concat(chunks).toString("utf8");
+};
 const note = (line: string) => process.stderr.write(`${line}\n`);
 
 const show = (json: boolean, value: unknown, human: () => void) => {
@@ -509,16 +516,29 @@ const runCommand = async (command: string, parsed: Parsed, config: BridgeConfig,
         if (visibility !== undefined && !VISIBILITIES.includes(visibility as (typeof VISIBILITIES)[number])) {
           throw new BridgeError(ErrorCode.InvalidParams, `--visibility must be one of ${VISIBILITIES.join(", ")}`);
         }
-        const r = (await call(
-          Method.VideoUpdate,
-          {
-            ...(positional[0] ? { videoId: positional[0] } : {}),
-            ...(typeof flags.title === "string" ? { title: flags.title } : {}),
-            ...(visibility ? { visibility } : {}),
-          },
-          40_000,
-        )) as Record<string, unknown>;
-        show(json, r, () => out(`${r.title ?? "Untitled"} (${r.videoId}), ${r.visibility}\nWatch: ${r.viewUrl}`));
+        if (flags["password-stdin"] && flags["no-password"]) {
+          throw new BridgeError(ErrorCode.InvalidParams, "Use --password-stdin or --no-password, not both");
+        }
+        if (typeof flags.expires === "string" && flags["no-expiry"]) {
+          throw new BridgeError(ErrorCode.InvalidParams, "Use --expires or --no-expiry, not both");
+        }
+        // The password comes on stdin so it stays out of shell history and the process list.
+        const password = flags["password-stdin"] ? (await readStdin()).replace(/\r?\n$/, "") : flags["no-password"] ? null : undefined;
+        const expiresAt = typeof flags.expires === "string" ? flags.expires : flags["no-expiry"] ? null : undefined;
+        const params = parseVideoParams(videoParams.update, {
+          ...(positional[0] ? { videoId: positional[0] } : {}),
+          ...(typeof flags.title === "string" ? { title: flags.title } : {}),
+          ...(visibility ? { visibility } : {}),
+          ...(password !== undefined ? { password } : {}),
+          ...(expiresAt !== undefined ? { expiresAt } : {}),
+        });
+        const r = (await call(Method.VideoUpdate, params, 40_000)) as Record<string, unknown>;
+        show(json, r, () => {
+          out(`${r.title ?? "Untitled"} (${r.videoId}), ${r.visibility}`);
+          if (r.passwordProtected) out("Link needs a password outside the workspace");
+          if (r.linkExpiresAt) out(`Link stops working ${r.linkExpiresAt}`);
+          out(`Watch: ${r.viewUrl}`);
+        });
       });
     case "delete":
       return withRecordful(config, logger, quiet, async (call) => {
