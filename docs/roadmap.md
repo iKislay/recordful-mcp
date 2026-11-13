@@ -76,7 +76,7 @@ Where Recordful's agent surface lags, and whether we can build it without hostin
 | 11 | Privacy auto-blur (emails, keys, card numbers) | Screen Studio community | **Yes, mid** | The edit has blur. Detection needs OCR on frames (Tesseract.js in the extension's offscreen document, or the desktop app's native OCR) |
 | 12 | One edit exported to several formats (X, LinkedIn, Shorts, GIF) | Screen Studio community | **Yes, mid** | Export presets over the existing export: ratio, padding and caption size per target |
 | 13 | Record through the desktop app (windows, displays) | Screen Studio community | **Yes** | AI-AGENT-TODO D-b: the desktop app as a bridge client. Screenshots already work this way |
-| 14 | Motion graphics, sound effects, music | Tella, Screen Studio community | **Partly** | Motion is AI-AGENT-TODO Phase B (HyperFrames). Sound effects and music need a licensed library |
+| 14 | Motion graphics, sound effects, music | Tella, Screen Studio community | **Partly** | Motion: researched in `motion-research.md` (overlays first, then agent-edited motion documents, HyperFrames for open-ended clips). Sound effects and music need a licensed library |
 | 15 | Publish to YouTube, LinkedIn, X, Instagram, Facebook | Tella | **Not soon** | Each needs its own developer app, OAuth and platform review; Meta and YouTube reviews take weeks. Ship share links and embeds first |
 | 16 | Hosted MCP for chat apps (Claude.ai, ChatGPT) | Tella, Cap | **Not now** | User decision 2026-11-14: no hosted MCP for now |
 
