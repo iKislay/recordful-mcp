@@ -7,7 +7,7 @@ export interface Parsed {
   flags: Record<string, string | boolean>;
 }
 
-const FLAGS_WITH_VALUES = new Set(["expires", "tab", "title", "visibility", "limit", "query", "format", "timeout", "target", "component", "body", "parent", "to", "look", "source", "window", "display"]);
+const FLAGS_WITH_VALUES = new Set(["days", "expires", "tab", "title", "visibility", "limit", "query", "format", "timeout", "target", "component", "body", "parent", "to", "look", "source", "window", "display"]);
 
 export const parseArgs = (argv: string[]): Parsed => {
   const positional: string[] = [];

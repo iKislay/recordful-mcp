@@ -95,13 +95,14 @@ One authenticated session at a time: a newer authenticated connection supersedes
 | `video.delete` | `videoId` (required), `confirm: true` or `dryRun: true` | `{deleted:true, videoId, inTrash:true, note}`, or with `dryRun` `{dryRun:true, wouldDelete:{videoId, title, createdAt, durationSeconds, visibility, views, viewUrl, editUrl}, note}` and nothing deleted. Moves it to trash (gone for good after 7 days). No default video; refuses without `confirm` |
 | `video.restore` | `videoId` (required) | `{restored:true, videoId, viewUrl, editUrl}` |
 | `trash.list` | none | `{trashDays, videos:[{videoId, title, kind, deletedAt, purgesAt, durationSeconds}]}` |
-| `video.engagement` | `videoId?` | `{videoId, views, viewsBy:{sources:[{label,count}], linkPage, embedded, countries:[{label,count}]} or null, likes, likedByUser, comments:[{id, body, createdAt, author}], viewUrl, editUrl}` |
+| `video.engagement` | `videoId?`, `days?` (1–365, default 30) | `{videoId, views, viewsBy:{sources:[{label,count}], linkPage, embedded, countries:[{label,count}]} or null, daily:[{date, views}] or null, likes, likedByUser, comments:[{id, body, createdAt, author}], viewUrl, editUrl}` |
 | `video.comment` | `videoId?`, `body` (1–2000 chars) | `{videoId, comment:{id, body, createdAt, author}}` |
 | `video.commentDelete` | `videoId`, `commentId` (both required), `confirm: true` | `{deleted:true, videoId, commentId}`. Its author or the video's manager may; refuses without `confirm` |
 | `video.like` | `videoId?`, `liked?` (default true) | `{videoId, liked, likes}` |
 | `video.move` | `videoIds` (1–200), `folderId?` (null: top level) | `{folderId, moved, skipped[], note?}` |
 | `folder.list` | none | `{folders:[{folderId, name, parentId, shared}]}` |
 | `folder.create` | `name`, `parentId?` | `{folderId, name, parentId, shared}` |
+| `analytics.get` | `days?` (1–365, default 30) | `{days, views, daily:[{date, views}] or null, topVideos:[{videoId, title, views, viewUrl, editUrl}]}`. Videos the user can see, not in trash |
 | `storage.get` | none | `{usedBytes, limitBytes, usedPercent, canUpload}` |
 | `video.transcript` | `videoId?`, `start?` (default true) | `{videoId, status:"done", text, vtt, viewUrl, editUrl}` or `{status:"working"\|"uploading"\|"none"}` or `{status:"failed", reason}`. One look; the MCP server and CLI poll it to wait |
 

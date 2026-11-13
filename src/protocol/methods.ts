@@ -40,6 +40,7 @@ export const Method = {
   VideoMove: "video.move",
   FolderList: "folder.list",
   FolderCreate: "folder.create",
+  AnalyticsGet: "analytics.get",
   StorageGet: "storage.get",
 } as const;
 export type Method = (typeof Method)[keyof typeof Method];

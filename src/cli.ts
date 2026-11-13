@@ -68,7 +68,8 @@ Manage videos, comments and folders (Recordful Pro; change things only when the 
   recordful-mcp delete <videoId> --yes      To trash for 7 days; --yes confirms this exact video
   recordful-mcp trash                       Deleted videos
   recordful-mcp restore <videoId>           Bring one back out of trash
-  recordful-mcp activity [<videoId>]        Views, likes and comments
+  recordful-mcp activity [<videoId>] [--days n]   Views (where from, per day), likes, comments
+  recordful-mcp analytics [--days n]        Views across all videos, most viewed
   recordful-mcp comment [<videoId>] --body <text>
   recordful-mcp comment-delete <videoId> <commentId> --yes
   recordful-mcp like [<videoId>] [--undo]
@@ -109,6 +110,14 @@ const readStdin = async () => {
   return Buffer.concat(chunks).toString("utf8");
 };
 const note = (line: string) => process.stderr.write(`${line}\n`);
+
+type DailyViews = Array<{ date: string; views: number }> | null;
+
+// Only the days someone watched, so a quiet month stays short.
+const printDaily = (daily: DailyViews | undefined) => {
+  const busy = (daily ?? []).filter((day) => day.views > 0);
+  if (busy.length) out(`  Per day: ${busy.map((day) => `${day.date} ${day.views}`).join(", ")}`);
+};
 
 const show = (json: boolean, value: unknown, human: () => void) => {
   if (json) out(JSON.stringify(value, null, 2));
@@ -579,11 +588,16 @@ const runCommand = async (command: string, parsed: Parsed, config: BridgeConfig,
       });
     case "activity":
       return withRecordful(config, logger, quiet, async (call) => {
-        const r = (await call(Method.VideoEngagement, positional[0] ? { videoId: positional[0] } : {}, 40_000)) as {
+        const params = parseVideoParams(videoParams.activity, {
+          ...(positional[0] ? { videoId: positional[0] } : {}),
+          ...(flags.days !== undefined ? { days: intFlag(flags, "days") } : {}),
+        });
+        const r = (await call(Method.VideoEngagement, params, 40_000)) as {
           videoId: string;
           views: number;
           likes: number;
           viewsBy?: { sources: Array<{ label: string; count: number }>; countries: Array<{ label: string; count: number }> } | null;
+          daily?: DailyViews;
           comments: Array<{ author: string | null; createdAt: string; body: string }>;
         };
         const list = (rows: Array<{ label: string; count: number }>) => rows.map((x) => `${x.label} ${x.count}`).join(", ");
@@ -591,7 +605,23 @@ const runCommand = async (command: string, parsed: Parsed, config: BridgeConfig,
           out(`${r.views} views, ${r.likes} likes, ${r.comments.length} comments`);
           if (r.viewsBy?.sources.length) out(`  From: ${list(r.viewsBy.sources)}`);
           if (r.viewsBy?.countries.length) out(`  Countries: ${list(r.viewsBy.countries)}`);
+          printDaily(r.daily);
           for (const c of r.comments) out(`  ${c.author ?? "Someone"} (${c.createdAt}): ${c.body}`);
+        });
+      });
+    case "analytics":
+      return withRecordful(config, logger, quiet, async (call) => {
+        const params = parseVideoParams(videoParams.analytics, flags.days !== undefined ? { days: intFlag(flags, "days") } : {});
+        const r = (await call(Method.AnalyticsGet, params, 40_000)) as {
+          days: number;
+          views: number;
+          daily?: DailyViews;
+          topVideos: Array<{ videoId: string; title: string | null; views: number }>;
+        };
+        show(json, r, () => {
+          out(`${r.views} views in the last ${r.days} days`);
+          printDaily(r.daily);
+          for (const v of r.topVideos) out(`  ${String(v.views).padStart(5)}  ${v.title ?? "Untitled"} (${v.videoId})`);
         });
       });
     case "comment":

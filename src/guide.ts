@@ -38,6 +38,7 @@ export const MCP_TOOLS = [
   "list_folders",
   "create_folder",
   "move_videos",
+  "get_analytics",
   "get_storage",
 ] as const;
 
@@ -63,7 +64,8 @@ const COMMANDS: CommandInfo[] = [
   { command: "delete <videoId> --dry-run | --yes", summary: "--dry-run shows what would go; --yes moves the video to trash; it's gone for good after 7 days (confirm the exact video with the user first)", pro: true, needsRecordful: true },
   { command: "trash", summary: "Videos in trash and when each is gone for good", pro: true, needsRecordful: true },
   { command: "restore <videoId>", summary: "Bring a video back out of trash", pro: true, needsRecordful: true },
-  { command: "activity [<videoId>]", summary: "Views, likes and comments on a video", pro: true, needsRecordful: true },
+  { command: "activity [<videoId>] [--days n]", summary: "Views (where from, per day), likes and comments on a video", pro: true, needsRecordful: true },
+  { command: "analytics [--days n]", summary: "Views per day across all the user's videos, and the most viewed", pro: true, needsRecordful: true },
   { command: "comment [<videoId>] --body <text>", summary: "Post a comment as the user (show the text first; it is public to viewers)", pro: true, needsRecordful: true },
   { command: "comment-delete <videoId> <commentId> --yes", summary: "Delete one comment for good (show it to the user first)", pro: true, needsRecordful: true },
   { command: "like [<videoId>] [--undo]", summary: "Like or unlike a video", pro: true, needsRecordful: true },

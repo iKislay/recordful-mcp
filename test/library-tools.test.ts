@@ -131,6 +131,30 @@ describe("library tools", () => {
     expect(sent).toEqual([{ password: "s3cret", expiresAt: later }, { password: null, expiresAt: null }]);
   });
 
+  it("reads views over time for a video and the library, within 1 to 365 days", async () => {
+    const sent: Record<string, unknown> = {};
+    const client = await setup({
+      "video.engagement": (p) => {
+        sent.engagement = p;
+        return { videoId: VIDEO, views: 2, daily: [{ date: "2026-11-13", views: 2 }], comments: [] };
+      },
+      "analytics.get": (p) => {
+        sent.analytics = p;
+        return { days: 7, views: 3, daily: [], topVideos: [{ videoId: VIDEO, title: "Demo", views: 3 }] };
+      },
+    });
+    expect(json(await client.callTool({ name: "get_video_activity", arguments: { days: 7 } })).daily).toEqual([{ date: "2026-11-13", views: 2 }]);
+    expect(json(await client.callTool({ name: "get_analytics", arguments: { days: 7 } }))).toMatchObject({ views: 3, topVideos: [{ title: "Demo" }] });
+    expect(sent).toEqual({ engagement: { days: 7 }, analytics: { days: 7 } });
+
+    const bad = await Promise.all([
+      client.callTool({ name: "get_analytics", arguments: { days: 0 } }),
+      client.callTool({ name: "get_analytics", arguments: { days: 366 } }),
+      client.callTool({ name: "get_video_activity", arguments: { days: 1.5 } }),
+    ]);
+    expect(bad.every((r) => r.isError)).toBe(true);
+  });
+
   it("passes a dry run through so the user sees what would go", async () => {
     const sent: unknown[] = [];
     const client = await setup({

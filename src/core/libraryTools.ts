@@ -73,7 +73,7 @@ export const registerLibraryTools = (server: McpServer, call: Call, handle: Hand
     "get_video_activity",
     {
       title: "Read views, likes and comments",
-      description: `${PRO} What viewers did with a video: its view count, where views came from (viewsBy: sources such as Direct, Google or X, link page vs embeds, top countries), likes, and every comment (oldest first, with author and time). Read-only. Defaults to the last recording.`,
+      description: `${PRO} What viewers did with a video: its view count, where views came from (viewsBy: sources such as Direct, Google or X, link page vs embeds, top countries), views per UTC day over the last days (daily, oldest first), likes, and every comment (oldest first, with author and time). Read-only. Defaults to the last recording.`,
       inputSchema: videoParams.activity,
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
@@ -144,6 +144,17 @@ export const registerLibraryTools = (server: McpServer, call: Call, handle: Hand
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },
     async (args) => handle(() => call(Method.VideoMove, parseVideoParams(videoParams.move, args), 40_000)),
+  );
+
+  server.registerTool(
+    "get_analytics",
+    {
+      title: "Views across all videos",
+      description: `${PRO} How the user's whole library is watched: total views and views per UTC day over the last days (default 30), plus the ten most viewed videos in that time with links. Covers the videos the user can see, not those in trash. get_video_activity has one video's detail. Read-only.`,
+      inputSchema: videoParams.analytics,
+      annotations: { readOnlyHint: true, openWorldHint: true },
+    },
+    async (args) => handle(() => call(Method.AnalyticsGet, parseVideoParams(videoParams.analytics, args), 40_000)),
   );
 
   server.registerTool(

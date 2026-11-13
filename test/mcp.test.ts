@@ -55,6 +55,7 @@ describe("MCP tools", () => {
       "create_folder",
       "delete_comment",
       "delete_video",
+      "get_analytics",
       "get_status",
       "get_storage",
       "get_transcript",

@@ -71,7 +71,13 @@ export const videoParams = {
     commentId: z.string().regex(/^[0-9a-f-]{36}$/i, "commentId must come from get_video_activity").describe("The comment to delete (from get_video_activity)."),
     confirm: z.literal(true).describe("Must be true, and only after the user has confirmed deleting this exact comment."),
   },
-  activity: { videoId: VideoId.optional() },
+  activity: {
+    videoId: VideoId.optional(),
+    days: z.number().int().min(1).max(365).optional().describe("Views per day over this many days, up to today (1 to 365, default 30)."),
+  },
+  analytics: {
+    days: z.number().int().min(1).max(365).optional().describe("Views per day over this many days, up to today (1 to 365, default 30)."),
+  },
   comment: {
     videoId: VideoId.optional(),
     body: z.string().trim().min(1).max(2000).describe("The comment text, exactly as the user approved it."),
