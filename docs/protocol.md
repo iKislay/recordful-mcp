@@ -146,12 +146,13 @@ Proofs are `HMAC-SHA256(peerSecret, "recordful-agent-bridge:peer:<serverNonce>:<
 | File | Role |
 | --- | --- |
 | `index.js` | Starts the client, registers the icon/shortcut listeners and the `open-agent-settings` message |
-| `client.js` | Connection, handshake, pairing, ping, request dispatch, the toolbar badge. Inert while AI agents is off. Connects on a toolbar-icon click, a shortcut or switching AI agents on (one attempt each), after a dropped session (6 retries with jitter, 1 s → 30 s, about 80 s total), and on worker boot if a session was live (`chrome.storage.session.agentBridgeWanted`). It never polls, because Chrome logs every refused WebSocket on `chrome://extensions` |
+| `client.js` | Connection, handshake, pairing, ping, request dispatch, the toolbar badge. Inert while AI agents is off. Connects on a toolbar-icon click, a shortcut or switching AI agents on (one attempt each), when the native relay says the bridge is up (one attempt; `nativeLink.js`), after a dropped session (6 retries with jitter, 1 s → 30 s, about 80 s total), and on worker boot if a session was live (`chrome.storage.session.agentBridgeWanted`). It never polls, because Chrome logs every refused WebSocket on `chrome://extensions` |
 | `storageKeys.js` | The storage the client and the AI agents page share: the switch, pairings, status, the open pairing request and the user's decision |
 | `auth.js` | WebCrypto HMAC, nonces and secrets, mirroring `src/auth/handshake.ts` |
 | `commands.js` | Recorder methods. Each sends the same message as the matching keyboard shortcut (`start-stream`, `stop-recording-tab`, `pause-recording`) |
 | `pageCommands.js` | Page methods: picks the target tab, navigation, waits, screenshots, and relays the rest to the content script |
-| `armedTab.js` | Remembers the tab the user handed over (icon click or shortcut) |
+| `nativeLink.js` | The native-messaging relay (`recordful-mcp native-host`, `app.recordful.bridge`): a WebSocket look-alike over `chrome.runtime.connectNative`, so the client connects whenever the bridge comes up without polling. Needs the optional `nativeMessaging` permission |
+| `armedTab.js` | Remembers the tab the user handed over (icon click or shortcut), or the tab `page.navigate` opened when none was (`via: "agent"`) |
 | `errors.js` | Error codes |
 | `../../Content/agentPage/` | Content-script side: snapshot and refs, the rendered cursor, click/type/press/scroll |
 | `../../Agents/` | `agents.html`: the AI agents page (switch, status, setup command, paired apps) and, with `?pair=1`, the pairing window |

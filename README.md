@@ -2,7 +2,7 @@
 
 **Let any AI app record, upload and read back product demos with [Recordful](https://recordful.app).**
 
-Ask your AI to *"record how the new sign-up flow works"*. It plans a short walkthrough, asks you to click the Recordful icon on the tab, then navigates, clicks and types with a smooth on-screen cursor while Recordful records. When it stops, Recordful's editor opens with the video. With Recordful Pro, it can also upload the video, hand you the link, and read the transcript back.
+Ask your AI to *"record how the new sign-up flow works"*. It plans a short walkthrough, opens the page in a tab of its own, then navigates, clicks and types with a smooth on-screen cursor while Recordful records. When it stops, Recordful's editor opens with the video. With Recordful Pro, it can also upload the video, hand you the link, and read the transcript back.
 
 It ships as an **MCP server** for AI apps and a **CLI** for anything with a shell.
 
@@ -91,10 +91,10 @@ args = ["-y", "recordful-mcp"]
 **3. First recording (one-time setup):**
 
 1. In Recordful's popup, click **More → AI agents** and turn it on. Chrome asks to allow screen recording once; click **Allow**.
-2. Ask your AI to record something. When it asks, click the **Recordful icon** on the tab.
+2. Ask your AI to record something. When it asks, click the **Recordful icon** once to connect it.
 3. Recordful asks you to approve the app. If the 4-digit code matches the one your AI shows, click **Allow**.
 
-After that, you only click the Recordful icon on the tab you want recorded.
+After that, Recordful connects to your AI app by itself whenever it starts. The agent opens its own tab for page tools and screenshots; the only click left is the Recordful icon on a tab you want recorded (Chrome requires it before an extension can capture a tab). If you turned AI agents on before Recordful 4.7.0, turn it off and on once to allow connecting by itself.
 
 ## Use it
 
