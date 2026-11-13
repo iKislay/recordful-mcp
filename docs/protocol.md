@@ -95,7 +95,7 @@ One authenticated session at a time: a newer authenticated connection supersedes
 | `video.delete` | `videoId` (required), `confirm: true` | `{deleted:true, videoId, inTrash:true, note}`. Moves it to trash (gone for good after 7 days). No default video; refuses without `confirm` |
 | `video.restore` | `videoId` (required) | `{restored:true, videoId, viewUrl, editUrl}` |
 | `trash.list` | none | `{trashDays, videos:[{videoId, title, kind, deletedAt, purgesAt, durationSeconds}]}` |
-| `video.engagement` | `videoId?` | `{videoId, views, likes, likedByUser, comments:[{id, body, createdAt, author}], viewUrl, editUrl}` |
+| `video.engagement` | `videoId?` | `{videoId, views, viewsBy:{sources:[{label,count}], linkPage, embedded, countries:[{label,count}]} or null, likes, likedByUser, comments:[{id, body, createdAt, author}], viewUrl, editUrl}` |
 | `video.comment` | `videoId?`, `body` (1–2000 chars) | `{videoId, comment:{id, body, createdAt, author}}` |
 | `video.like` | `videoId?`, `liked?` (default true) | `{videoId, liked, likes}` |
 | `video.move` | `videoIds` (1–200), `folderId?` (null: top level) | `{folderId, moved, skipped[], note?}` |

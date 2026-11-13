@@ -549,10 +549,14 @@ const runCommand = async (command: string, parsed: Parsed, config: BridgeConfig,
           videoId: string;
           views: number;
           likes: number;
+          viewsBy?: { sources: Array<{ label: string; count: number }>; countries: Array<{ label: string; count: number }> } | null;
           comments: Array<{ author: string | null; createdAt: string; body: string }>;
         };
+        const list = (rows: Array<{ label: string; count: number }>) => rows.map((x) => `${x.label} ${x.count}`).join(", ");
         show(json, r, () => {
           out(`${r.views} views, ${r.likes} likes, ${r.comments.length} comments`);
+          if (r.viewsBy?.sources.length) out(`  From: ${list(r.viewsBy.sources)}`);
+          if (r.viewsBy?.countries.length) out(`  Countries: ${list(r.viewsBy.countries)}`);
           for (const c of r.comments) out(`  ${c.author ?? "Someone"} (${c.createdAt}): ${c.body}`);
         });
       });

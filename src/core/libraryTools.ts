@@ -62,7 +62,7 @@ export const registerLibraryTools = (server: McpServer, call: Call, handle: Hand
     "get_video_activity",
     {
       title: "Read views, likes and comments",
-      description: `${PRO} What viewers did with a video: its view count, likes, and every comment (oldest first, with author and time). Read-only. Defaults to the last recording.`,
+      description: `${PRO} What viewers did with a video: its view count, where views came from (viewsBy: sources such as Direct, Google or X, link page vs embeds, top countries), likes, and every comment (oldest first, with author and time). Read-only. Defaults to the last recording.`,
       inputSchema: videoParams.activity,
       annotations: { readOnlyHint: true, openWorldHint: true },
     },
