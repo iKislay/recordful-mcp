@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.1 (2026-11-13)
+
+- The relay starts under Claude Desktop too. Claude Desktop can run the `.mcpb` server on its own Electron runtime, and the relay's launcher then started the Claude app instead of the relay. 1.1.0 was tagged but never published; use 1.1.1.
+
 ## 1.1.0 (2026-11-13)
 
 No more toolbar click for everything. With Recordful 4.7.0, the only click left is the one Chrome requires to record a tab.
