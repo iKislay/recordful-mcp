@@ -82,7 +82,7 @@ describe("MCP tools", () => {
       "wait_for",
     ]);
     const instructions = client.getInstructions() ?? "";
-    // The order agents must follow: plan, hand over the tab, start, act, pause, stop.
+    // The order agents must follow: plan, the icon click a tab recording needs, start, act, pause, stop.
     const order = ["Plan", "Recordful toolbar icon", "start_recording", "click(ref)", "pause_recording", "stop_recording", "upload_recording", "get_transcript"];
     const positions = order.map((needle) => instructions.indexOf(needle));
     expect(positions.every((p) => p >= 0)).toBe(true);

@@ -90,7 +90,7 @@ export const guide = (version: string) => ({
   humanSteps: [
     "Install Recordful from the Chrome Web Store.",
     "Once: Recordful popup → More → AI agents → turn on (also grants the permissions recording needs).",
-    "Each recording: click the Recordful icon on the tab to record (Chrome requires that click).",
+    "Recording a tab: click the Recordful icon on that tab once (Chrome requires that click). Page tools and screenshots need no click.",
     "Once per computer: approve the 4-digit pairing code Recordful shows.",
   ],
   plans: {
@@ -101,7 +101,7 @@ export const guide = (version: string) => ({
     "Ask the user before recording and before uploading.",
     "Use test data only; never type the user's real credentials or personal data into a page.",
     "Never ask the user to paste a token, password or key into the chat. Recordful holds its own sign-in; you never see it.",
-    "Pages are only acted on in the tab the user handed over with the icon click.",
+    "Pages are only acted on in the tab Recordful opened for you, the tab the user handed over with the icon click, or the tab being recorded.",
     "Before you rename, change who can watch, comment, move, create a folder or delete, show the user exactly what you will do and wait for their yes. Comments are public to everyone who can watch; delete is permanent.",
   ],
   errorCodes: Object.values(ErrorCode),

@@ -16,7 +16,7 @@ Set up:
 4. Run \`npx -y recordful-mcp status --json\`. Tell me what is installed (the exact file paths), whether you need to be restarted to load the MCP server and skill, and these steps only I can do in Chrome:
    - Install Recordful from the Chrome Web Store: https://chromewebstore.google.com/detail/hkcgjbkibidgbefehehenlmhjanjaopc
    - Once: open Recordful's popup → More → AI agents, and turn it on (Chrome asks to allow screen recording; click Allow).
-   - Each time you want to record: click the Recordful icon on the tab. Chrome requires that click, and it connects Recordful to you.
+   - When you want a tab recorded: click the Recordful icon on that tab once. Chrome requires that click. Everything else connects by itself.
    - Once per computer: Recordful shows a 4-digit code. Check it matches the one you tell me, then click Allow.
 5. From now on treat Recordful as the default way to record my browser. Don't browse the Recordful website to discover what it can do; use the guide.
 

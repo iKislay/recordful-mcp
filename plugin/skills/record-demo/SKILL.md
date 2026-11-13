@@ -27,10 +27,10 @@ Plan 5 to 10 steps for a 30 to 90 second video: the starting screen, the main ac
 
 ## 5. Connect
 
-Ask the user to click the Recordful icon in Chrome on the tab with the app. Chrome requires that click before an extension can record a tab, and it also connects Recordful to you. Then call `get_status`.
+Call `get_status`. Recordful connects to you by itself once AI agents is on and it has paired with you.
 
 The first time on a computer:
-- `NOT_CONNECTED`: the user also turns on AI agents in Recordful (popup → More → AI agents, or paste `chrome-extension://hkcgjbkibidgbefehehenlmhjanjaopc/agents.html` into Chrome's address bar), then clicks the icon again.
+- `NOT_CONNECTED`: ask the user to click the Recordful icon in Chrome. If that doesn't connect, they turn on AI agents in Recordful (popup → More → AI agents, or paste `chrome-extension://hkcgjbkibidgbefehehenlmhjanjaopc/agents.html` into Chrome's address bar), then clicks the icon again.
 - `PAIRING_PENDING`: Recordful opened a window asking to approve you. Tell the user the 4-digit code from the error so they can check it matches, and ask them to click Allow. Then retry.
 - `PAIRING_DENIED`: stop and ask the user what they'd like to do.
 
@@ -38,8 +38,8 @@ If Recordful or the MCP server isn't installed, point the user to https://github
 
 ## 6. Record
 
-1. `navigate` to the starting page and `snapshot` it. Make the starting state clean (signed out for a sign-in demo, no leftover data or open dialogs).
-2. `start_recording`. It uses the user's Recordful settings (mode, microphone, camera, countdown) and returns once capture is live. `NOT_ARMED` means the user needs to click the Recordful icon on that tab.
+1. `navigate` to the starting page and `snapshot` it. If no tab was handed to you, `navigate` opens a tab of your own; page tools never touch the user's other tabs. Make the starting state clean (signed out for a sign-in demo, no leftover data or open dialogs).
+2. If the recording mode (`get_status`) is tab or tab area, ask the user to click the Recordful icon on that tab once: Chrome requires it before an extension can record a tab. Then `start_recording`. It uses the user's Recordful settings (mode, microphone, camera, countdown) and returns once capture is live. `NOT_ARMED` means that click hasn't happened yet.
 3. Follow the shot list with the page tools. Take a fresh `snapshot` after anything that changes the page; refs from before a navigation stop working. Use `wait_for` so each result is on screen before you move on.
 4. Call `pause_recording` whenever you need to think or plan, and `resume_recording` right before the next action, so the video has no dead air. Call `add_marker` with a few words at each moment worth finding again (a result appearing, an error shown); `stop_recording` returns them with their times.
 5. If something goes wrong (an error, the wrong page), pause, fix it, and resume. Start over only if the mistake would confuse viewers.
@@ -66,6 +66,6 @@ Tell the user the video is open in Recordful's editor (and its link, on Pro), an
 
 ## Screenshots
 
-For "take a screenshot of X": ask for the icon click (step 5), `navigate` to the page if needed, then call `take_screenshot` once. Use `mode: "page"` for the whole page. Pass `look` only if the user asked for a look: `"3d"` for a 3D tilt, or a preset (Clean, Window, Glass, Spotlight, Midnight, Bold, None); otherwise leave it out and their default look is used. It opens in Recordful's screenshot editor and returns no image, so don't take another screenshot to check it. Tell the user it is open there.
+For "take a screenshot of X": `navigate` to the page (no click needed), then call `take_screenshot` once. Use `mode: "page"` for the whole page. Pass `look` only if the user asked for a look: `"3d"` for a 3D tilt, or a preset (Clean, Window, Glass, Spotlight, Midnight, Bold, None); otherwise leave it out and their default look is used. It opens in Recordful's screenshot editor and returns no image, so don't take another screenshot to check it. Tell the user it is open there.
 
 For a screenshot of something outside the browser ("my Figma window", "my whole screen"): no icon click. Call `take_screenshot` with `source: "window"` and `window` set to part of its title or app name (call `list_windows` if unsure), `source: "screen"` (optionally `display: 2`), or `source: "area"` to let the user drag one. It needs the Recordful desktop app with Settings → AI agents → "Let AI agents take screenshots" on; if the tool says it isn't on, ask the user to turn it on and retry.
