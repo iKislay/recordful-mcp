@@ -28,3 +28,28 @@ Editor tools over the same connection: `trim`, `cut_dead_air` (using markers and
 ## Phase 3: hosted MCP
 
 `mcp.recordful.app` for cloud-only AI apps; see [remote-mcp.md](remote-mcp.md).
+
+## Against Cap (read 2026-11-13 from github.com/CapSoftware/Cap, `apps/cli` and `apps/web/lib/mcp-server.ts`)
+
+Cap's agent surface has three parts: the `cap` CLI, which records, exports and validates `.cap` projects on a desktop; `cap mcp serve`, a local MCP server with about 85 tools that are almost all cloud library, team, billing and developer-API operations (`caps_*`, `organization_*`, `space_*`, `developer_*`); and a hosted, read-only MCP at cap.so/api/mcp (OAuth, three tools: `caps_list`, `caps_get`, `caps_context` with a recording card UI). Every mutation needs `confirmed: true`, and destructive ones take `dry_run`. The CLI also runs headless: `CAP_API_KEY` reuses no app at all.
+
+Done on branch `cap-parity` (not released):
+- `get_transcript` takes `query` and returns only the matching moments with times (like `caps_context` with a query).
+- `list_trash` and `restore_video`; `delete_video` says it goes to the 7-day trash.
+- `get_video_activity` returns `viewsBy` (sources, link page vs embeds, countries).
+
+Still missing, biggest first:
+
+| Gap | Cap | What it takes here |
+| --- | --- | --- |
+| Library tools without Chrome | `CAP_API_KEY` / desktop login; CI can upload, transcribe, comment, manage the library | Every cloud tool goes through the extension today. Needs a CLI sign-in (PKCE loopback like `lib/desktop-auth.ts`, or the existing OAuth provider) and API routes that accept that token, then an HTTP `RecorderTransport` for the `video.*`, `folder.*`, `trash.*` and `storage.*` methods |
+| AI summary, chapters and title | `caps_process` (ai) and `caps_context` return them; the share page shows them | Nothing in recordful-ee. An Inngest step after transcription using the OpenRouter client and credits, stored with the transcript, shown on /view |
+| Teams | members, invites, roles, seats, spaces, shares | better-auth's organization plugin is installed; no agent tools or extension methods |
+| Views over time | `analytics_get` with a range, per video, space or org | `recording_views` has `createdAt`; add a per-day series and a workspace total |
+| Comment replies, reactions, delete | `caps_reply`, `caps_react`, comment delete | `recording_comments` has no parent id |
+| Edit a transcript | `caps_transcript_replace` with a revision check | Captions are edited in the web editor only |
+| Duplicate, download, password | `caps_duplicate`, `caps download`, `caps password` | No routes |
+| Loom import | `caps_import_loom`, per-row for migrations | Not started |
+| Dry run on destructive tools | `dry_run: true` shows what would go | `delete_video` refuses without `confirm` but doesn't preview |
+| Recording cards in chat | MCP Apps resource `ui://cap/recording-card.html` | The hosted connector returns text only |
+| Headless validate/export | `cap project validate`, `cap export` | Extension recordings export in the editor only |
