@@ -49,6 +49,9 @@ export const videoParams = {
     videoId: z.string().regex(/^[0-9a-f-]{36}$/i, "videoId must be a Recordful video ID").describe("The video to delete. Required: there is no default for a delete."),
     confirm: z.literal(true).describe("Must be true, and only after the user has confirmed deleting this exact video."),
   },
+  restore: {
+    videoId: z.string().regex(/^[0-9a-f-]{36}$/i, "videoId must be a Recordful video ID").describe("The video in trash to bring back (from list_trash)."),
+  },
   activity: { videoId: VideoId.optional() },
   comment: {
     videoId: VideoId.optional(),

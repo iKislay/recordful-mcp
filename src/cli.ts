@@ -63,7 +63,9 @@ Videos (uploads and transcripts need Recordful Pro):
 
 Manage videos, comments and folders (Recordful Pro; change things only when the user asked):
   recordful-mcp update [<videoId>] [--title <t>] [--visibility private|workspace|public]
-  recordful-mcp delete <videoId> --yes      Permanent; --yes confirms this exact video
+  recordful-mcp delete <videoId> --yes      To trash for 7 days; --yes confirms this exact video
+  recordful-mcp trash                       Deleted videos
+  recordful-mcp restore <videoId>           Bring one back out of trash
   recordful-mcp activity [<videoId>]        Views, likes and comments
   recordful-mcp comment [<videoId>] --body <text>
   recordful-mcp like [<videoId>] [--undo]
@@ -522,10 +524,24 @@ const runCommand = async (command: string, parsed: Parsed, config: BridgeConfig,
       return withRecordful(config, logger, quiet, async (call) => {
         if (!positional[0]) throw new BridgeError(ErrorCode.InvalidParams, "delete needs the video ID (recordful-mcp videos lists them)");
         if (flags.yes !== true) {
-          throw new BridgeError(ErrorCode.InvalidParams, "Deleting a video is permanent. Check it is the right one, then run again with --yes.");
+          throw new BridgeError(ErrorCode.InvalidParams, "Deleting moves the video to trash, and it's gone for good after 7 days. Check it is the right one, then run again with --yes.");
         }
         const r = (await call(Method.VideoDelete, { videoId: positional[0], confirm: true }, 40_000)) as Record<string, unknown>;
-        show(json, r, () => out(`Deleted ${r.videoId}.`));
+        show(json, r, () => out(`Moved ${r.videoId} to trash. recordful-mcp restore ${r.videoId} brings it back for 7 days.`));
+      });
+    case "trash":
+      return withRecordful(config, logger, quiet, async (call) => {
+        const r = (await call(Method.TrashList, {}, 40_000)) as { videos: Array<Record<string, unknown>> };
+        show(json, r, () => {
+          if (!r.videos.length) return out("Trash is empty.");
+          for (const v of r.videos) out(`${v.videoId}  ${v.title ?? "Untitled"}  (gone ${String(v.purgesAt).slice(0, 10)})`);
+        });
+      });
+    case "restore":
+      return withRecordful(config, logger, quiet, async (call) => {
+        if (!positional[0]) throw new BridgeError(ErrorCode.InvalidParams, "restore needs the video ID (recordful-mcp trash lists them)");
+        const r = (await call(Method.VideoRestore, { videoId: positional[0] }, 40_000)) as Record<string, unknown>;
+        show(json, r, () => out(`Restored ${r.videoId}. Watch: ${r.viewUrl}`));
       });
     case "activity":
       return withRecordful(config, logger, quiet, async (call) => {

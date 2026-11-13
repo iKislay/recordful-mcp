@@ -92,7 +92,9 @@ One authenticated session at a time: a newer authenticated connection supersedes
 | `video.get` | `videoId?` | `{videoId, title, visibility, durationSeconds, createdAt, viewUrl, editUrl, stage:"uploading"\|"processing"\|"ready"\|"failed", uploadedBytes, totalBytes, error?}` |
 | `video.list` | `limit?` (1–50, default 10), `query?` | `{videos:[{videoId, title, createdAt, durationSeconds, visibility, viewUrl, editUrl}]}` |
 | `video.update` | `videoId?`, `title?`, `visibility?` | `{videoId, title, visibility, viewUrl, editUrl}`. Needs at least one of title and visibility |
-| `video.delete` | `videoId` (required), `confirm: true` | `{deleted:true, videoId}`. No default video; refuses without `confirm` |
+| `video.delete` | `videoId` (required), `confirm: true` | `{deleted:true, videoId, inTrash:true, note}`. Moves it to trash (gone for good after 7 days). No default video; refuses without `confirm` |
+| `video.restore` | `videoId` (required) | `{restored:true, videoId, viewUrl, editUrl}` |
+| `trash.list` | none | `{trashDays, videos:[{videoId, title, kind, deletedAt, purgesAt, durationSeconds}]}` |
 | `video.engagement` | `videoId?` | `{videoId, views, likes, likedByUser, comments:[{id, body, createdAt, author}], viewUrl, editUrl}` |
 | `video.comment` | `videoId?`, `body` (1–2000 chars) | `{videoId, comment:{id, body, createdAt, author}}` |
 | `video.like` | `videoId?`, `liked?` (default true) | `{videoId, liked, likes}` |

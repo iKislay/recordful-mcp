@@ -175,7 +175,7 @@ describe("recordful-mcp CLI", () => {
     expect(JSON.parse(moved.stdout)).toMatchObject({ moved: 1, folderId: VIDEO });
     const refused = await run(["delete", VIDEO]);
     expect(refused.code).toBe(1);
-    expect(refused.stderr).toMatch(/permanent/);
+    expect(refused.stderr).toMatch(/trash/);
     const deleted = await run(["delete", VIDEO, "--yes", "--json"]);
     expect(JSON.parse(deleted.stdout)).toEqual({ deleted: true, videoId: VIDEO });
   }, 30_000);

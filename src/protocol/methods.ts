@@ -31,6 +31,8 @@ export const Method = {
   // Managing videos, folders and comments (Recordful Pro).
   VideoUpdate: "video.update",
   VideoDelete: "video.delete",
+  VideoRestore: "video.restore",
+  TrashList: "trash.list",
   VideoEngagement: "video.engagement",
   VideoComment: "video.comment",
   VideoLike: "video.like",

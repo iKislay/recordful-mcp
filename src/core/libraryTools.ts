@@ -29,11 +29,33 @@ export const registerLibraryTools = (server: McpServer, call: Call, handle: Hand
     "delete_video",
     {
       title: "Delete a video",
-      description: `${PRO} Permanently delete a video and its files from recordful.app. This can't be undone, and there is no default video: name it. Ask the user to confirm this exact video (title and link) first, then call with confirm: true.`,
+      description: `${PRO} Delete a video from recordful.app. It goes to trash, where restore_video can bring it back for 7 days; after that it and its files are gone for good. There is no default video: name it. Ask the user to confirm this exact video (title and link) first, then call with confirm: true.`,
       inputSchema: videoParams.remove,
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
     },
     async (args) => handle(() => call(Method.VideoDelete, parseVideoParams(videoParams.remove, args), 40_000)),
+  );
+
+  server.registerTool(
+    "list_trash",
+    {
+      title: "List deleted videos",
+      description: `${PRO} Videos in trash that the user can see: videoId, title, when it was deleted and when it's gone for good (7 days later). Read-only.`,
+      inputSchema: {},
+      annotations: { readOnlyHint: true, openWorldHint: true },
+    },
+    async () => handle(() => call(Method.TrashList, {}, 40_000)),
+  );
+
+  server.registerTool(
+    "restore_video",
+    {
+      title: "Restore a deleted video",
+      description: `${PRO} Bring a video back out of trash (list_trash shows them), with its links as before. Only the person who recorded it, or the workspace owner, can.`,
+      inputSchema: videoParams.restore,
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+    },
+    async (args) => handle(() => call(Method.VideoRestore, parseVideoParams(videoParams.restore, args), 40_000)),
   );
 
   server.registerTool(

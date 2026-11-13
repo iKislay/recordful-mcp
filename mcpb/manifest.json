@@ -149,6 +149,14 @@
       "description": "Move a video to the trash; needs the exact video and confirm (Pro)"
     },
     {
+      "name": "list_trash",
+      "description": "Deleted videos and when each is gone for good (Pro)"
+    },
+    {
+      "name": "restore_video",
+      "description": "Bring a video back out of trash (Pro)"
+    },
+    {
       "name": "get_storage",
       "description": "Cloud storage used and left (Pro)"
     }

@@ -106,6 +106,21 @@ describe("library tools", () => {
     expect(deletes).toBe(1);
   });
 
+  it("lists trash and restores a named video only", async () => {
+    const restored: unknown[] = [];
+    const client = await setup({
+      "trash.list": () => ({ trashDays: 7, videos: [{ videoId: VIDEO, title: "Demo" }] }),
+      "video.restore": (p) => {
+        restored.push(p);
+        return { restored: true, videoId: p.videoId };
+      },
+    });
+    expect(json(await client.callTool({ name: "list_trash", arguments: {} }))).toMatchObject({ videos: [{ videoId: VIDEO }] });
+    expect((await client.callTool({ name: "restore_video", arguments: {} })).isError).toBe(true);
+    expect(json(await client.callTool({ name: "restore_video", arguments: { videoId: VIDEO } }))).toEqual({ restored: true, videoId: VIDEO });
+    expect(restored).toEqual([{ videoId: VIDEO }]);
+  });
+
   it("rejects bad input before it reaches the extension", async () => {
     let calls = 0;
     const client = await setup({
