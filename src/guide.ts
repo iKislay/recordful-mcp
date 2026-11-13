@@ -55,7 +55,7 @@ const COMMANDS: CommandInfo[] = [
   { command: "upload [<takeId>] [--title t] [--visibility private|workspace|public] [--force] [--no-wait]", summary: "Upload a recording and return its links", pro: true, needsRecordful: true },
   { command: "videos [--limit n] [--query text]", summary: "List the user's videos on recordful.app", pro: true, needsRecordful: true },
   { command: "video [<videoId>] [--wait]", summary: "One video's links and upload stage", pro: true, needsRecordful: true },
-  { command: "transcript [<videoId>] [--format text|vtt|json] [--no-wait]", summary: "Print what was said (starts transcription on first use)", pro: true, needsRecordful: true },
+  { command: "transcript [<videoId>] [--format text|vtt|json] [--query <words>] [--no-wait]", summary: "Print what was said (starts transcription on first use); --query prints only the matching moments with times", pro: true, needsRecordful: true },
   { command: "update [<videoId>] [--title t] [--visibility private|workspace|public]", summary: "Rename a video or change who may watch (show the user first)", pro: true, needsRecordful: true },
   { command: "delete <videoId> --yes", summary: "Permanently delete a video (confirm the exact video with the user first)", pro: true, needsRecordful: true },
   { command: "activity [<videoId>]", summary: "Views, likes and comments on a video", pro: true, needsRecordful: true },

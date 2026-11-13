@@ -101,10 +101,11 @@ export const registerVideoTools = (server: McpServer, call: Call, handle: Handle
     {
       title: "Read a transcript",
       description:
-        'Recordful Pro only (check get_status recorder.account.plan first). Read back what was said in a Recordful video. Starts transcribing if it hasn\'t been yet, and by default waits until it\'s done, including for an upload still in progress. format: "text" (default), "vtt" (timed captions), or "both". Defaults to the last recording; a recording only on this computer must be uploaded first (upload_recording).',
+        'Recordful Pro only (check get_status recorder.account.plan first). Read back what was said in a Recordful video. Starts transcribing if it hasn\'t been yet, and by default waits until it\'s done, including for an upload still in progress. format: "text" (default), "vtt" (timed captions), or "both". With query, returns only the moments that mention it (startMs, endMs, text; up to 30) instead of the whole transcript, so search with it first on long videos. Defaults to the last recording; a recording only on this computer must be uploaded first (upload_recording).',
       inputSchema: {
         ...videoParams.transcript,
         format: z.enum(["text", "vtt", "both"]).optional().describe('"text" (default), "vtt" (with timestamps), or "both".'),
+        query: z.string().trim().min(1).max(200).optional().describe("Find what was said about this: returns only the matching moments, with times."),
         wait: z.boolean().optional().describe("Wait until the transcript is ready (default true)."),
         timeoutMs: waitTimeout(300_000),
       },

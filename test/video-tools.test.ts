@@ -188,6 +188,19 @@ describe("get_transcript", () => {
     expect(textOf(await client.callTool({ name: "get_transcript", arguments: { format: "both" } }))).toMatchObject({ text: "Hi.", vtt: "WEBVTT" });
   });
 
+  it("with a query, returns only the matching moments and their times", async () => {
+    const vtt = "WEBVTT\n\n1\n00:00:01.500 --> 00:00:03.000\nOpen the Billing page\n\n2\n00:04.000 --> 00:05.250 align:start\nthen click save\n\n3\n01:02:03.000 --> 01:02:04.000\nBILLING again";
+    const client = await setup({ "video.transcript": () => ({ videoId: VIDEO, status: "done", text: "long text", vtt }) });
+    const out = textOf(await client.callTool({ name: "get_transcript", arguments: { query: "billing" } }));
+    expect(out.text).toBeUndefined();
+    expect(out.vtt).toBeUndefined();
+    expect(out.totalMatches).toBe(2);
+    expect(out.matches).toEqual([
+      { startMs: 1500, endMs: 3000, text: "Open the Billing page" },
+      { startMs: 3_723_000, endMs: 3_724_000, text: "BILLING again" },
+    ]);
+  });
+
   it("notes an empty transcript", async () => {
     const client = await setup({ "video.transcript": () => ({ videoId: VIDEO, status: "done", text: "  ", vtt: "WEBVTT" }) });
     expect(textOf(await client.callTool({ name: "get_transcript", arguments: {} })).note).toMatch(/no speech/);

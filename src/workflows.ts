@@ -98,6 +98,31 @@ export const getVideoAndWait = async (
   return { ...state, waitedMs, ...(timedOut ? { note: "Not ready yet. Call again with wait: true to keep waiting." } : {}) };
 };
 
+const MAX_MATCHES = 30;
+
+const toMs = (stamp: string) =>
+  stamp.split(":").reduce((total, part) => total * 60 + Number(part), 0) * 1000;
+
+// The cues of a WebVTT transcript that mention `query` (any case), with their
+// times, so an agent can find a moment without reading the whole transcript.
+export const findCues = (vtt: string, query: string) => {
+  const needle = query.trim().toLowerCase();
+  const matches: Array<{ startMs: number; endMs: number; text: string }> = [];
+  let total = 0;
+  for (const block of vtt.split(/\r?\n\r?\n/)) {
+    const lines = block.split(/\r?\n/);
+    const at = lines.findIndex((line) => line.includes("-->"));
+    if (at < 0) continue;
+    const text = lines.slice(at + 1).join(" ").trim();
+    if (!text.toLowerCase().includes(needle)) continue;
+    total++;
+    if (matches.length >= MAX_MATCHES) continue;
+    const [start = "", end = ""] = (lines[at] ?? "").split("-->").map((side) => side.trim().split(/\s/)[0] ?? "");
+    matches.push({ startMs: Math.round(toMs(start)), endMs: Math.round(toMs(end)), text });
+  }
+  return { matches, totalMatches: total, ...(total > MAX_MATCHES ? { note: `Showing the first ${MAX_MATCHES} of ${total}; narrow the query.` } : {}) };
+};
+
 export const transcriptAndWait = async (
   call: Call,
   args: Record<string, unknown>,
@@ -107,14 +132,16 @@ export const transcriptAndWait = async (
     wait = true,
     timeoutMs = 300_000,
     format = "text",
+    query,
     ...rest
-  } = args as { wait?: boolean; timeoutMs?: number; format?: "text" | "vtt" | "both" };
+  } = args as { wait?: boolean; timeoutMs?: number; format?: "text" | "vtt" | "both"; query?: string };
   const params = parseVideoParams(videoParams.transcript, rest);
   const started = Date.now();
   for (;;) {
     const now = (await call(Method.VideoTranscript, params, 100_000)) as TranscriptState;
     if (now.status === "done") {
       const { text = "", vtt = "", ...about } = now;
+      if (query?.trim()) return { ...about, query, ...findCues(vtt, query) };
       return {
         ...about,
         ...(format !== "vtt" ? { text } : {}),

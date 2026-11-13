@@ -58,7 +58,7 @@ Videos (uploads and transcripts need Recordful Pro):
                                        Your videos on recordful.app
   recordful-mcp video [<videoId>] [--wait]
                                        One video's links and upload stage
-  recordful-mcp transcript [<videoId>] [--format text|vtt|json] [--no-wait]
+  recordful-mcp transcript [<videoId>] [--format text|vtt|json] [--query <words>] [--no-wait]
                                        Print what was said (transcribes on first use)
 
 Manage videos, comments and folders (Recordful Pro; change things only when the user asked):
@@ -482,6 +482,7 @@ const runCommand = async (command: string, parsed: Parsed, config: BridgeConfig,
           {
             ...(positional[0] ? { videoId: positional[0] } : {}),
             format: format === "json" ? "both" : format,
+            ...(flags.query ? { query: flags.query } : {}),
             wait: !flags["no-wait"],
             ...(timeoutMs ? { timeoutMs } : {}),
           },
@@ -494,6 +495,10 @@ const runCommand = async (command: string, parsed: Parsed, config: BridgeConfig,
           return;
         }
         if (typeof r.note === "string") note(r.note);
+        if (Array.isArray(r.matches)) {
+          const clock = (ms: number) => new Date(ms).toISOString().slice(ms >= 3_600_000 ? 11 : 14, 19);
+          return out(r.matches.map((m: { startMs: number; text: string }) => `${clock(m.startMs)}  ${m.text}`).join("\n"));
+        }
         out(String(format === "vtt" ? r.vtt ?? "" : r.text ?? ""));
       });
     case "update":
