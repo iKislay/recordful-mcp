@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.2.0 (2026-11-14)
+
+Run your Recordful library from your AI app: summaries, analytics, trash, link locks, comments and your team. Needs Recordful 4.8.0 for the new tools; with an older Recordful they answer `UNKNOWN_METHOD`.
+
+- **`get_summary`**: a video's AI summary and chapters, as its page shows them. Reading is free; `generate: true` writes one and spends the workspace's AI credits (about 1 to 2), so agents are told to ask first. New error code `OUT_OF_CREDITS` (with `renewsAt`). CLI: `summary [--generate | --regenerate]`.
+- **`get_transcript` takes `query`**: only the moments that mention it, with times (up to 30), instead of the whole transcript. CLI: `transcript --query <words>`.
+- **Analytics.** `get_analytics` returns the library's views per day and its ten most viewed videos; `get_video_activity` now says where views came from (`viewsBy`) and gives views per day. `days` is 1 to 365 (default 30). CLI: `analytics`, `activity --days`.
+- **Trash.** `delete_video` now says the truth: the video goes to trash for 7 days. `list_trash` and `restore_video` bring it back, and `dryRun: true` shows what a delete would remove without deleting. CLI: `trash`, `restore`, `delete --dry-run`.
+- **Link locks.** `update_video` takes `password` (null removes it) and `expiresAt` (null: never). Results say `passwordProtected` and `linkExpiresAt` and never echo the password. The CLI reads the password from stdin (`--password-stdin`), so it stays out of shell history.
+- **`delete_comment`**: remove one comment, named and confirmed. CLI: `comment-delete <videoId> <commentId> --yes`.
+- **Teams.** `list_members` shows who is in the workspace and who is invited; `invite_member` emails an invitation, owner only, with the exact address confirmed. CLI: `members`, `invite <email> --yes`.
+- Every change still needs the user's yes: the tools that publish, email someone or delete need `confirm: true`, and destructive ones can preview first.
+
 ## 1.1.2 (2026-11-13)
 
 - **The repo is the plugin.** The Claude Code plugin's `.mcp.json`, `record-demo` skill and `/record-demo` command moved from `plugin/` to the repo root, in the [Open Plugins](https://open-plugins.com) layout, so plugin directories such as Cursor Directory find them. `/plugin marketplace add iKislay/recordful-mcp` works as before. The npm package is the same as 1.1.1 apart from the version.
