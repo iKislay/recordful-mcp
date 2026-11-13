@@ -104,6 +104,8 @@ One authenticated session at a time: a newer authenticated connection supersedes
 | `folder.list` | none | `{folders:[{folderId, name, parentId, shared}]}` |
 | `folder.create` | `name`, `parentId?` | `{folderId, name, parentId, shared}` |
 | `analytics.get` | `days?` (1–365, default 30) | `{days, views, daily:[{date, views}] or null, topVideos:[{videoId, title, views, viewUrl, editUrl}]}`. Videos the user can see, not in trash |
+| `members.list` | none | `{members:[{name, email, role}], invites:[{email}]}` |
+| `members.invite` | `email`, `confirm: true` | `{invited:true, email}`. Workspace owner only (`FORBIDDEN`); already a member or invited and the member limit come back as errors with a message |
 | `storage.get` | none | `{usedBytes, limitBytes, usedPercent, canUpload}` |
 | `video.transcript` | `videoId?`, `start?` (default true) | `{videoId, status:"done", text, vtt, viewUrl, editUrl}` or `{status:"working"\|"uploading"\|"none"}` or `{status:"failed", reason}`. One look; the MCP server and CLI poll it to wait |
 

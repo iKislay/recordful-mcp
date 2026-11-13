@@ -42,6 +42,8 @@ export const Method = {
   FolderList: "folder.list",
   FolderCreate: "folder.create",
   AnalyticsGet: "analytics.get",
+  MembersList: "members.list",
+  MembersInvite: "members.invite",
   StorageGet: "storage.get",
 } as const;
 export type Method = (typeof Method)[keyof typeof Method];

@@ -78,6 +78,8 @@ Manage videos, comments and folders (Recordful Pro; change things only when the 
   recordful-mcp folders                     Your folders
   recordful-mcp folder-create <name> [--parent <folderId>]
   recordful-mcp move <videoId>... [--to <folderId>]   (no --to: the top level)
+  recordful-mcp members                     Who is in the workspace, who is invited
+  recordful-mcp invite <email> --yes        Invite someone (workspace owner only)
   recordful-mcp storage                     Cloud storage used
 
 Other:
@@ -708,6 +710,26 @@ const runCommand = async (command: string, parsed: Parsed, config: BridgeConfig,
           out(`Moved ${r.moved} video${r.moved === 1 ? "" : "s"}.`);
           if (r.skipped.length) note(r.note ?? `Skipped: ${r.skipped.join(", ")}`);
         });
+      });
+    case "members":
+      return withRecordful(config, logger, quiet, async (call) => {
+        const r = (await call(Method.MembersList, {}, 40_000)) as {
+          members: Array<{ name: string; email: string; role: string }>;
+          invites: Array<{ email: string }>;
+        };
+        show(json, r, () => {
+          for (const m of r.members) out(`${m.name} <${m.email}>  ${m.role}`);
+          for (const i of r.invites) out(`${i.email}  invited`);
+        });
+      });
+    case "invite":
+      return withRecordful(config, logger, quiet, async (call) => {
+        if (flags.yes !== true) {
+          throw new BridgeError(ErrorCode.InvalidParams, "Inviting emails this person. Check the address, then run again with --yes.");
+        }
+        const params = parseVideoParams(videoParams.invite, { email: positional[0], confirm: true });
+        const r = (await call(Method.MembersInvite, params, 40_000)) as { email: string };
+        show(json, r, () => out(`Invited ${r.email}.`));
       });
     case "storage":
       return withRecordful(config, logger, quiet, async (call) => {

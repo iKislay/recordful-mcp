@@ -155,6 +155,26 @@ describe("library tools", () => {
     expect(bad.every((r) => r.isError)).toBe(true);
   });
 
+  it("lists members, and invites only a valid, confirmed address", async () => {
+    const invited: unknown[] = [];
+    const client = await setup({
+      "members.list": () => ({ members: [{ name: "Kai", email: "kai@example.com", role: "owner" }], invites: [] }),
+      "members.invite": (p) => {
+        invited.push(p);
+        return { invited: true, email: p.email };
+      },
+    });
+    expect(json(await client.callTool({ name: "list_members", arguments: {} })).members).toHaveLength(1);
+    const refused = await Promise.all([
+      client.callTool({ name: "invite_member", arguments: { email: "sam@example.com" } }),
+      client.callTool({ name: "invite_member", arguments: { email: "not an email", confirm: true } }),
+    ]);
+    expect(refused.every((r) => r.isError)).toBe(true);
+    expect(invited).toEqual([]);
+    const ok = await client.callTool({ name: "invite_member", arguments: { email: "sam@example.com", confirm: true } });
+    expect(json(ok)).toEqual({ invited: true, email: "sam@example.com" });
+  });
+
   it("passes a dry run through so the user sees what would go", async () => {
     const sent: unknown[] = [];
     const client = await setup({

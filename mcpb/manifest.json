@@ -169,6 +169,14 @@
       "description": "Views per day across the library, and the most viewed (Pro)"
     },
     {
+      "name": "list_members",
+      "description": "Who is in the workspace, and who is invited (Pro)"
+    },
+    {
+      "name": "invite_member",
+      "description": "Invite someone by email; owner only, needs confirm (Pro)"
+    },
+    {
       "name": "get_storage",
       "description": "Cloud storage used and left (Pro)"
     }

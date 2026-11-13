@@ -158,6 +158,28 @@ export const registerLibraryTools = (server: McpServer, call: Call, handle: Hand
   );
 
   server.registerTool(
+    "list_members",
+    {
+      title: "List workspace members",
+      description: `${PRO} Who is in the user's Recordful workspace (name, email, role: owner or member) and which email addresses are invited but haven't joined. Read-only.`,
+      inputSchema: {},
+      annotations: { readOnlyHint: true, openWorldHint: true },
+    },
+    async () => handle(() => call(Method.MembersList, {}, 40_000)),
+  );
+
+  server.registerTool(
+    "invite_member",
+    {
+      title: "Invite someone to the workspace",
+      description: `${PRO} Email an invitation to join the user's workspace as a member: they can then see and comment on its videos. Only the workspace owner can. It emails someone else, so confirm the exact address with the user first, then call with confirm: true. Never guess an address.`,
+      inputSchema: videoParams.invite,
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+    },
+    async (args) => handle(() => call(Method.MembersInvite, parseVideoParams(videoParams.invite, args), 40_000)),
+  );
+
+  server.registerTool(
     "get_storage",
     {
       title: "Check storage",

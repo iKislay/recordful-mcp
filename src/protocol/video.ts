@@ -80,6 +80,10 @@ export const videoParams = {
     videoId: VideoId.optional(),
     days: z.number().int().min(1).max(365).optional().describe("Views per day over this many days, up to today (1 to 365, default 30)."),
   },
+  invite: {
+    email: z.email().max(254).describe("The address to invite, exactly as the user gave it."),
+    confirm: z.literal(true).describe("Must be true, and only after the user has confirmed inviting this exact address."),
+  },
   analytics: {
     days: z.number().int().min(1).max(365).optional().describe("Views per day over this many days, up to today (1 to 365, default 30)."),
   },

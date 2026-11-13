@@ -40,6 +40,8 @@ export const MCP_TOOLS = [
   "create_folder",
   "move_videos",
   "get_analytics",
+  "list_members",
+  "invite_member",
   "get_storage",
 ] as const;
 
@@ -74,6 +76,8 @@ const COMMANDS: CommandInfo[] = [
   { command: "folders", summary: "List the user's folders", pro: true, needsRecordful: true },
   { command: "folder-create <name> [--parent <folderId>]", summary: "Create a folder", pro: true, needsRecordful: true },
   { command: "move <videoId>... [--to <folderId>]", summary: "Move videos into a folder (no --to: the top level)", pro: true, needsRecordful: true },
+  { command: "members", summary: "Who is in the workspace, and who is invited", pro: true, needsRecordful: true },
+  { command: "invite <email> --yes", summary: "Invite someone to the workspace (owner only; confirm the address with the user first)", pro: true, needsRecordful: true },
   { command: "storage", summary: "Cloud storage used and whether uploads are allowed", pro: true, needsRecordful: true },
   { command: "call <method> [json]", summary: "Call one Recordful method directly (page actions such as page.click, debugging)", needsRecordful: true },
   { command: "install --target <app> [--component all|mcp|skill] [--yes]", summary: "Add Recordful to one AI app's configuration (a dry run unless --yes)", needsRecordful: false },
