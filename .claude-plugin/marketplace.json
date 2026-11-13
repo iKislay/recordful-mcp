@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "recordful",
-      "source": "./plugin",
+      "source": "./",
       "description": "Record product demos in Chrome with Recordful, upload them and read back transcripts: the recordful MCP server, a record-demo skill and a /record-demo command.",
       "version": "1.1.1"
     }

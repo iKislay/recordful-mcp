@@ -8,7 +8,7 @@ npm run dev          # run the CLI from source
 npm run pack:mcpb    # build recordful.mcpb for Claude Desktop
 ```
 
-`src/skill.ts` is generated from `plugin/skills/record-demo/SKILL.md`: run `node scripts/sync-skill.mjs` after editing the skill (a test fails if they differ). The help center's setup-prompt page is generated from `src/setupPrompt.ts`: `npm run build && node scripts/sync-help-prompt.mjs ../recordful-help`.
+`src/skill.ts` is generated from `skills/record-demo/SKILL.md`: run `node scripts/sync-skill.mjs` after editing the skill (a test fails if they differ). The help center's setup-prompt page is generated from `src/setupPrompt.ts`: `npm run build && node scripts/sync-help-prompt.mjs ../recordful-help`.
 
 ## Live end-to-end tests
 
@@ -27,7 +27,7 @@ To use a development build of Recordful with your AI app, allow its extension ID
 
 ## Releasing
 
-1. Bump the version in `package.json`, `mcpb/manifest.json`, `plugin/.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json` and `server.json`, and add a `CHANGELOG.md` entry.
+1. Bump the version in `package.json`, `mcpb/manifest.json`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json` and `server.json`, and add a `CHANGELOG.md` entry.
 2. `npm publish` (runs the checks and a fresh build first).
 3. `npm run pack:mcpb` and attach `recordful.mcpb` to a GitHub release.
 4. Optionally publish `server.json` to the [MCP Registry](https://registry.modelcontextprotocol.io) with `mcp-publisher publish`.
@@ -46,7 +46,10 @@ src/
   protocol/         wire messages (zod), methods, page-tool params, error codes
 test/               vitest: pairing, handshake security, requests, MCP tools and prompt, config
 scripts/            live end-to-end tests, MCPB packer
-plugin/             Claude Code plugin: MCP config, record-demo skill, /record-demo command
+.claude-plugin/     plugin manifest and marketplace: the repo root is the plugin (Open Plugins layout)
+.mcp.json           the plugin's MCP server config
+skills/             record-demo skill
+commands/           /record-demo command
 mcpb/               Claude Desktop extension manifest and icon
 docs/               protocol, reference, findings, roadmap, hosted MCP plan
 ```

@@ -52,6 +52,8 @@ Add to the app's MCP config: `~/.cursor/mcp.json`, `~/.codeium/windsurf/mcp_conf
 ```json
 { "mcpServers": { "recordful": { "command": "npx", "args": ["-y", "recordful-mcp"] } } }
 ```
+
+This repo is also a plugin in the [Open Plugins](https://open-plugins.com) layout (`.mcp.json`, `skills/`, `commands/` at the root), so plugin directories such as [Cursor Directory](https://cursor.directory) can install the server, the `record-demo` skill and the `/record-demo` command together.
 </details>
 
 <details>

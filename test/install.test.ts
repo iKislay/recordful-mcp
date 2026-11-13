@@ -114,7 +114,7 @@ describe("install", () => {
   });
 
   it("keeps the installed skill and the plugin's skill identical", () => {
-    const plugin = readFileSync(new URL("../plugin/skills/record-demo/SKILL.md", import.meta.url), "utf8").replace(/\r\n/g, "\n");
+    const plugin = readFileSync(new URL("../skills/record-demo/SKILL.md", import.meta.url), "utf8").replace(/\r\n/g, "\n");
     expect(SKILL_TEXT).toBe(plugin);
   });
 });
