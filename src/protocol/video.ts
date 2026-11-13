@@ -65,6 +65,11 @@ export const videoParams = {
   restore: {
     videoId: z.string().regex(/^[0-9a-f-]{36}$/i, "videoId must be a Recordful video ID").describe("The video in trash to bring back (from list_trash)."),
   },
+  deleteComment: {
+    videoId: z.string().regex(/^[0-9a-f-]{36}$/i, "videoId must be a Recordful video ID").describe("The video the comment is on. Required."),
+    commentId: z.string().regex(/^[0-9a-f-]{36}$/i, "commentId must come from get_video_activity").describe("The comment to delete (from get_video_activity)."),
+    confirm: z.literal(true).describe("Must be true, and only after the user has confirmed deleting this exact comment."),
+  },
   activity: { videoId: VideoId.optional() },
   comment: {
     videoId: VideoId.optional(),

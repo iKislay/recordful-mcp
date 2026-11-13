@@ -129,6 +129,26 @@ describe("library tools", () => {
     expect(sent).toEqual([{ password: "s3cret", expiresAt: later }, { password: null, expiresAt: null }]);
   });
 
+  it("deletes a comment only when it is named and confirmed", async () => {
+    const COMMENT = "2d2d8f6e-1c2d-4e5f-8a9b-0c1d2e3f4a5b";
+    const sent: unknown[] = [];
+    const client = await setup({
+      "video.commentDelete": (p) => {
+        sent.push(p);
+        return { deleted: true, videoId: p.videoId, commentId: p.commentId };
+      },
+    });
+    const refused = await Promise.all([
+      client.callTool({ name: "delete_comment", arguments: { videoId: VIDEO, commentId: COMMENT } }),
+      client.callTool({ name: "delete_comment", arguments: { commentId: COMMENT, confirm: true } }),
+      client.callTool({ name: "delete_comment", arguments: { videoId: VIDEO, commentId: "nope", confirm: true } }),
+    ]);
+    expect(refused.every((r) => r.isError)).toBe(true);
+    expect(sent).toEqual([]);
+    const ok = await client.callTool({ name: "delete_comment", arguments: { videoId: VIDEO, commentId: COMMENT, confirm: true } });
+    expect(json(ok)).toEqual({ deleted: true, videoId: VIDEO, commentId: COMMENT });
+  });
+
   it("lists trash and restores a named video only", async () => {
     const restored: unknown[] = [];
     const client = await setup({

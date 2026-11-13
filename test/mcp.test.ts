@@ -53,6 +53,7 @@ describe("MCP tools", () => {
       "click",
       "comment_on_video",
       "create_folder",
+      "delete_comment",
       "delete_video",
       "get_status",
       "get_storage",

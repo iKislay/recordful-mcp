@@ -81,6 +81,17 @@ export const registerLibraryTools = (server: McpServer, call: Call, handle: Hand
   );
 
   server.registerTool(
+    "delete_comment",
+    {
+      title: "Delete a comment",
+      description: `${PRO} Delete one comment from a video (get_video_activity lists them with their ids). Its author can, and so can the person who recorded the video or the workspace owner. It can't be brought back: show the user the comment and wait for their yes, then call with confirm: true.`,
+      inputSchema: videoParams.deleteComment,
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
+    },
+    async (args) => handle(() => call(Method.VideoCommentDelete, parseVideoParams(videoParams.deleteComment, args), 40_000)),
+  );
+
+  server.registerTool(
     "like_video",
     {
       title: "Like or unlike a video",

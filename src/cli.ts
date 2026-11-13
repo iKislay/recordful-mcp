@@ -69,6 +69,7 @@ Manage videos, comments and folders (Recordful Pro; change things only when the 
   recordful-mcp restore <videoId>           Bring one back out of trash
   recordful-mcp activity [<videoId>]        Views, likes and comments
   recordful-mcp comment [<videoId>] --body <text>
+  recordful-mcp comment-delete <videoId> <commentId> --yes
   recordful-mcp like [<videoId>] [--undo]
   recordful-mcp folders                     Your folders
   recordful-mcp folder-create <name> [--parent <folderId>]
@@ -589,6 +590,15 @@ const runCommand = async (command: string, parsed: Parsed, config: BridgeConfig,
           40_000,
         )) as { comment: { id: string } };
         show(json, r, () => out(`Posted comment ${r.comment.id}.`));
+      });
+    case "comment-delete":
+      return withRecordful(config, logger, quiet, async (call) => {
+        if (flags.yes !== true) {
+          throw new BridgeError(ErrorCode.InvalidParams, "A deleted comment can't be brought back. Check it is the right one, then run again with --yes.");
+        }
+        const params = parseVideoParams(videoParams.deleteComment, { videoId: positional[0], commentId: positional[1], confirm: true });
+        const r = (await call(Method.VideoCommentDelete, params, 40_000)) as Record<string, unknown>;
+        show(json, r, () => out(`Deleted comment ${r.commentId}.`));
       });
     case "like":
       return withRecordful(config, logger, quiet, async (call) => {

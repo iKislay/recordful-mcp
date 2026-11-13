@@ -35,6 +35,7 @@ export const Method = {
   TrashList: "trash.list",
   VideoEngagement: "video.engagement",
   VideoComment: "video.comment",
+  VideoCommentDelete: "video.commentDelete",
   VideoLike: "video.like",
   VideoMove: "video.move",
   FolderList: "folder.list",

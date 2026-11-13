@@ -97,6 +97,7 @@ One authenticated session at a time: a newer authenticated connection supersedes
 | `trash.list` | none | `{trashDays, videos:[{videoId, title, kind, deletedAt, purgesAt, durationSeconds}]}` |
 | `video.engagement` | `videoId?` | `{videoId, views, viewsBy:{sources:[{label,count}], linkPage, embedded, countries:[{label,count}]} or null, likes, likedByUser, comments:[{id, body, createdAt, author}], viewUrl, editUrl}` |
 | `video.comment` | `videoId?`, `body` (1–2000 chars) | `{videoId, comment:{id, body, createdAt, author}}` |
+| `video.commentDelete` | `videoId`, `commentId` (both required), `confirm: true` | `{deleted:true, videoId, commentId}`. Its author or the video's manager may; refuses without `confirm` |
 | `video.like` | `videoId?`, `liked?` (default true) | `{videoId, liked, likes}` |
 | `video.move` | `videoIds` (1–200), `folderId?` (null: top level) | `{folderId, moved, skipped[], note?}` |
 | `folder.list` | none | `{folders:[{folderId, name, parentId, shared}]}` |
