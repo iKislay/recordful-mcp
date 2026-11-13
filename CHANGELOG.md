@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0 (2026-11-13)
+
+No more toolbar click for everything. With Recordful 4.7.0, the only click left is the one Chrome requires to record a tab.
+
+- **Recordful connects by itself.** Each time the server (or the CLI helper) starts, it registers a native-messaging relay, `recordful-mcp native-host` (`app.recordful.bridge`), for Chrome, Edge, Brave and Chromium: a launcher and manifest in `~/.recordful/native-host`, plus a per-user registry key on Windows or a manifest in each installed browser's folder on macOS and Linux. Chrome starts the relay when AI agents is on, the relay tells Recordful when the bridge is up, and Recordful joins with no click, no polling and nothing logged on chrome://extensions. It only carries frames: pairing stays end to end, and the first pairing still takes a click. Without it, the icon click works as before.
+- **Agents get a tab of their own.** With no tab handed over, `navigate` opens one (`openedTab: true`), so page tools and `take_screenshot` need no click. The user's other tabs stay out of reach. For a tab or tab-area recording there, the user clicks the Recordful icon on that tab once, and `start_recording` says so at once.
+- The instructions, the record-demo skill, the setup prompt and the guide only ask for the click where it's still needed. The Claude Code plugin's version now follows the package.
+
 ## 1.0.0 (2026-11-12)
 
 Screenshots of the whole desktop, not just a browser tab, through the Recordful desktop app. A major version: recordful-mcp now drives two Recordful apps, the Chrome extension and the desktop app.
