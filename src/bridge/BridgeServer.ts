@@ -111,7 +111,7 @@ const pairingPendingError = (pairing: PairingInfo) =>
 
 const notConnectedError = () =>
   new BridgeError(ErrorCode.NotConnected, "The Recordful extension is not connected.", {
-    hint: "Ask the user to click the Recordful toolbar icon in Chrome on the tab they want recorded, then retry. The first time only, they also turn on AI agents in Recordful (Recordful popup → More → AI agents, or paste chrome-extension://hkcgjbkibidgbefehehenlmhjanjaopc/agents.html into Chrome's address bar). If Recordful isn't installed: https://recordful.app",
+    hint: "Ask the user to click the Recordful toolbar icon in Chrome, then retry (after that Recordful reconnects by itself). The first time only, they also turn on AI agents in Recordful (Recordful popup → More → AI agents, or paste chrome-extension://hkcgjbkibidgbefehehenlmhjanjaopc/agents.html into Chrome's address bar). If Recordful isn't installed: https://recordful.app",
   });
 
 const HEARTBEAT_CHECK_MS = 5_000;

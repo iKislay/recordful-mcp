@@ -25,7 +25,7 @@ export const localTransport = (bridge: Bridge): RecorderTransport => ({
       },
       hint: pairing
         ? `Recordful is waiting for the user to approve this app. Ask them to check the code ${pairing.code} and click Allow.`
-        : "Ask the user to click the Recordful toolbar icon in Chrome on the tab to record. The first time only, they also turn on AI agents (Recordful popup → More → AI agents).",
+        : "Ask the user to click the Recordful toolbar icon in Chrome (after that Recordful reconnects by itself). The first time only, they also turn on AI agents (Recordful popup → More → AI agents).",
     };
   },
 });
