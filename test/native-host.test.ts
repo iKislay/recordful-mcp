@@ -30,6 +30,7 @@ describe("registerNativeHost", () => {
     expect(manifest.allowed_origins).toEqual([`chrome-extension://${ID}/`]);
     expect(manifest.path).toBe(join(dir, "recordful-native-host.cmd"));
     expect(readFileSync(manifest.path, "utf8")).toContain('"C:\\node\\node.exe" "C:\\rf\\dist\\cli.js" native-host %*');
+    expect(readFileSync(manifest.path, "utf8")).toContain("set ELECTRON_RUN_AS_NODE=1");
     expect(where).toHaveLength(4);
     expect(calls.filter((c) => c[0] === "add")).toHaveLength(4);
 

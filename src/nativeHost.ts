@@ -59,9 +59,11 @@ export const registerNativeHost = (opts: RegisterOptions): string[] => {
   const dir = join(home, ".recordful", "native-host");
   const windows = os === "win32";
   const launcher = join(dir, windows ? "recordful-native-host.cmd" : "recordful-native-host.sh");
+  // Claude Desktop runs .mcpb servers on its own Electron; without this the
+  // launcher would start the Claude app instead of the relay. Plain Node ignores it.
   const launcherText = windows
-    ? `@echo off\r\n"${node}" "${opts.cliPath}" native-host %*\r\n`
-    : `#!/bin/sh\nexec "${node}" "${opts.cliPath}" native-host "$@"\n`;
+    ? `@echo off\r\nset ELECTRON_RUN_AS_NODE=1\r\n"${node}" "${opts.cliPath}" native-host %*\r\n`
+    : `#!/bin/sh\nELECTRON_RUN_AS_NODE=1 exec "${node}" "${opts.cliPath}" native-host "$@"\n`;
   writeIfChanged(launcher, launcherText);
   if (!windows) chmodSync(launcher, 0o755);
   const manifest = `${JSON.stringify(
