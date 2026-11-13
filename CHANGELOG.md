@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.2 (2026-11-13)
+
+- **The repo is the plugin.** The Claude Code plugin's `.mcp.json`, `record-demo` skill and `/record-demo` command moved from `plugin/` to the repo root, in the [Open Plugins](https://open-plugins.com) layout, so plugin directories such as Cursor Directory find them. `/plugin marketplace add iKislay/recordful-mcp` works as before. The npm package is the same as 1.1.1 apart from the version.
+
 ## 1.1.1 (2026-11-13)
 
 - The relay starts under Claude Desktop too. Claude Desktop can run the `.mcpb` server on its own Electron runtime, and the relay's launcher then started the Claude app instead of the relay. 1.1.0 was tagged but never published; use 1.1.1.
