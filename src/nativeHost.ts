@@ -171,12 +171,17 @@ export const runNativeHost = (origin: string | undefined) => {
     const socket = new WebSocket(`ws://127.0.0.1:${port}${path}`, {
       // The bridge only takes Recordful's own origin, which Chrome vouched for.
       origin: origin?.replace(/\/$/, ""),
+      handshakeTimeout: 5_000,
     });
     ws = socket;
     socket.on("open", () => send({ t: "open" }));
-    socket.on("message", (data) => send({ t: "msg", data: data.toString() }));
+    socket.on("message", (data) => {
+      if (ws === socket) send({ t: "msg", data: data.toString() });
+    });
     socket.on("close", (code, reason) => {
-      if (ws === socket) ws = null;
+      // A socket the extension already replaced must not close the new one.
+      if (ws !== socket) return;
+      ws = null;
       send({ t: "close", code, reason: reason.toString() });
     });
     socket.on("error", () => {});

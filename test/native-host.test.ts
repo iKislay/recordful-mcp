@@ -91,6 +91,13 @@ describe("relay", () => {
     expect(got.map((m) => m.t)).toEqual(["up", "open", "msg"]);
     host.stdin.write(encodeFrame({ t: "msg", data: "hello" }));
     await until(() => got.some((m) => m.data === "echo:hello"));
+    // Opening again replaces the session without a close for the old one,
+    // which the extension would read as the new one closing.
+    const before = got.length;
+    host.stdin.write(encodeFrame({ t: "open" }));
+    await until(() => got.slice(before).some((m) => m.t === "msg" && m.data === "challenge"));
+    await new Promise((r) => setTimeout(r, 300));
+    expect(got.slice(before).map((m) => m.t)).toEqual(["open", "msg"]);
     host.stdin.write(encodeFrame({ t: "close", code: 4401, reason: "bye" }));
     await until(() => got.some((m) => m.t === "close"));
     expect(origin).toBe(`chrome-extension://${ID}`);
