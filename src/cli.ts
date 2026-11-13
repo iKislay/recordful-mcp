@@ -59,6 +59,8 @@ Videos (uploads and transcripts need Recordful Pro):
   recordful-mcp video [<videoId>] [--wait]
                                        One video's links and upload stage
   recordful-mcp transcript [<videoId>] [--format text|vtt|json] [--query <words>] [--no-wait]
+  recordful-mcp summary [<videoId>] [--generate | --regenerate]
+                                       AI summary and chapters (--generate spends AI credits)
                                        Print what was said (transcribes on first use)
 
 Manage videos, comments and folders (Recordful Pro; change things only when the user asked):
@@ -520,6 +522,30 @@ const runCommand = async (command: string, parsed: Parsed, config: BridgeConfig,
           return out(r.matches.map((m: { startMs: number; text: string }) => `${clock(m.startMs)}  ${m.text}`).join("\n"));
         }
         out(String(format === "vtt" ? r.vtt ?? "" : r.text ?? ""));
+      });
+    case "summary":
+      return withRecordful(config, logger, quiet, async (call) => {
+        const params = parseVideoParams(videoParams.summary, {
+          ...(positional[0] ? { videoId: positional[0] } : {}),
+          ...(flags.generate ? { generate: true } : {}),
+          ...(flags.regenerate ? { regenerate: true } : {}),
+        });
+        const r = (await call(Method.VideoSummary, params, 100_000)) as {
+          status: string;
+          note?: string;
+          summary?: string;
+          chapters?: Array<{ startSeconds: number; title: string }>;
+        };
+        show(json, r, () => {
+          if (r.status !== "done") {
+            note(r.note ?? r.status);
+            process.exitCode = 2;
+            return;
+          }
+          out(r.summary);
+          const clock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+          for (const c of r.chapters ?? []) out(`  ${clock(c.startSeconds).padStart(6)}  ${c.title}`);
+        });
       });
     case "update":
       return withRecordful(config, logger, quiet, async (call) => {

@@ -117,6 +117,10 @@
       "description": "The desktop's open windows, for a window screenshot (Recordful desktop app)"
     },
     {
+      "name": "get_summary",
+      "description": "AI summary and chapters of a video; writes one on request (Pro, AI credits)"
+    },
+    {
       "name": "update_video",
       "description": "Rename a video or change who may watch it (Pro)"
     },

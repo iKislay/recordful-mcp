@@ -40,6 +40,11 @@ export const videoParams = {
     videoId: VideoId.optional(),
     start: z.boolean().optional().describe("Start transcribing if there's no transcript yet (default true)."),
   },
+  summary: {
+    videoId: VideoId.optional(),
+    generate: z.boolean().optional().describe("Write one if there is none yet. It spends the workspace's AI credits: only after the user said yes."),
+    regenerate: z.boolean().optional().describe("Write a new one even if one exists (spends credits; only after the user said yes)."),
+  },
   update: {
     videoId: VideoId.optional(),
     title: z.string().trim().min(1).max(200).optional().describe("New title."),

@@ -44,6 +44,7 @@ export const ErrorCode = {
   UploadFailed: "UPLOAD_FAILED",
   UploadInterrupted: "UPLOAD_INTERRUPTED",
   Forbidden: "FORBIDDEN",
+  OutOfCredits: "OUT_OF_CREDITS",
 } as const;
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
 

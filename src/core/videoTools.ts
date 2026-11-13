@@ -97,6 +97,18 @@ export const registerVideoTools = (server: McpServer, call: Call, handle: Handle
   );
 
   server.registerTool(
+    "get_summary",
+    {
+      title: "Read the AI summary and chapters",
+      description:
+        'Recordful Pro only. A Recordful video\'s AI summary (2 to 4 sentences) and chapters ([{ startSeconds, title }], the first at 0), as shown on its page. Reading is free. If there is none (status "none"), writing one spends the workspace\'s AI credits (about 1 to 2 a summary): ask the user first, then call with generate: true. Needs a transcript (status "no_transcript": call get_transcript first). OUT_OF_CREDITS means none are left this month. Defaults to the last recording.',
+      inputSchema: videoParams.summary,
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
+    },
+    async (args) => handle(() => call(Method.VideoSummary, parseVideoParams(videoParams.summary, args), 100_000)),
+  );
+
+  server.registerTool(
     "get_transcript",
     {
       title: "Read a transcript",

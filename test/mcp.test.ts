@@ -58,6 +58,7 @@ describe("MCP tools", () => {
       "get_analytics",
       "get_status",
       "get_storage",
+      "get_summary",
       "get_transcript",
       "get_video",
       "get_video_activity",

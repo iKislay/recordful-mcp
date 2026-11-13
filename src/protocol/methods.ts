@@ -28,6 +28,7 @@ export const Method = {
   VideoGet: "video.get",
   VideoList: "video.list",
   VideoTranscript: "video.transcript",
+  VideoSummary: "video.summary",
   // Managing videos, folders and comments (Recordful Pro).
   VideoUpdate: "video.update",
   VideoDelete: "video.delete",

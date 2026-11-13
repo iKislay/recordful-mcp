@@ -157,6 +157,35 @@ describe("get_video", () => {
   });
 });
 
+describe("get_summary", () => {
+  it("reads without generating, and generates only when asked", async () => {
+    const asked: Record<string, unknown>[] = [];
+    const client = await setup({
+      "video.summary": (p: Record<string, unknown>) => {
+        asked.push(p);
+        return p.generate
+          ? { videoId: VIDEO, status: "done", summary: "Shows billing.", chapters: [{ startSeconds: 0, title: "Billing" }] }
+          : { videoId: VIDEO, status: "none", note: "No summary yet." };
+      },
+    });
+    expect(textOf(await client.callTool({ name: "get_summary", arguments: {} })).status).toBe("none");
+    const done = textOf(await client.callTool({ name: "get_summary", arguments: { videoId: VIDEO, generate: true } }));
+    expect(done).toMatchObject({ status: "done", chapters: [{ startSeconds: 0, title: "Billing" }] });
+    expect(asked).toEqual([{}, { videoId: VIDEO, generate: true }]);
+  });
+
+  it("passes OUT_OF_CREDITS through with the renewal date", async () => {
+    const client = await setup({
+      "video.summary": () => {
+        throw Object.assign(new Error("No AI credits left."), { code: "OUT_OF_CREDITS", data: { renewsAt: "2026-12-01T00:00:00.000Z" } });
+      },
+    });
+    const result = await client.callTool({ name: "get_summary", arguments: { generate: true } });
+    expect(result.isError).toBe(true);
+    expect(textOf(result).error).toMatchObject({ code: "OUT_OF_CREDITS" });
+  });
+});
+
 describe("get_transcript", () => {
   const transcript = (states: Array<Record<string, unknown>>) => {
     const asked: Record<string, unknown>[] = [];
