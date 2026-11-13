@@ -21,6 +21,7 @@ import { setupGuide } from "./setupGuide.js";
 import { SETUP_PROMPT } from "./setupPrompt.js";
 import { getVideoAndWait, mb, transcriptAndWait, uploadAndWait, type Call } from "./workflows.js";
 import { desktopCall } from "./desktop.js";
+import { registerNativeHost, runNativeHost } from "./nativeHost.js";
 
 const { version } = createRequire(import.meta.url)("../package.json") as { version: string };
 
@@ -105,10 +106,21 @@ const show = (json: boolean, value: unknown, human: () => void) => {
 
 // ---- server and helper -------------------------------------------------------
 
+// So Recordful can connect by itself whenever this bridge is up (nativeHost.ts).
+const registerRelay = (config: BridgeConfig, logger: Logger) => {
+  try {
+    const where = registerNativeHost({ extensionIds: config.allowedExtensionIds, cliPath: process.argv[1] ?? "" });
+    logger.debug("native host registered", { where });
+  } catch (err) {
+    logger.warn("could not register the native host; the Recordful icon click still connects", { error: String(err) });
+  }
+};
+
 const serve = async (config: BridgeConfig, logger: Logger) => {
   const pairings = await openStore(config);
   logger.info("pairing state loaded", { path: pairings.path, serverId: pairings.serverId });
   warnOpenAllowlist(config, logger);
+  registerRelay(config, logger);
 
   const bridge = new BridgeAgent({ config, pairings, logger });
   void bridge.start();
@@ -143,6 +155,7 @@ const serve = async (config: BridgeConfig, logger: Logger) => {
 // another recordful-mcp already holds the connection.
 const daemon = async (config: BridgeConfig, logger: Logger) => {
   const pairings = await openStore(config);
+  registerRelay(config, logger);
   const bridge = new BridgeAgent({ config, pairings, logger, app: "recordful-mcp (command line)" });
   await bridge.start();
   const server = bridge.server;
@@ -606,6 +619,8 @@ const main = async () => {
   const [command = "serve", ...rest] = process.argv.slice(2);
   if (command === "--help" || command === "-h" || command === "help") return void process.stdout.write(HELP);
   if (command === "--version" || command === "-v") return out(version);
+  // Started by Chrome; stdout belongs to Chrome's framing, so nothing else runs.
+  if (command === "native-host") return runNativeHost(rest[0]);
 
   const config = loadConfig();
   // CLI commands log only warnings (to stderr); the server logs info.
