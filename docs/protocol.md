@@ -92,7 +92,7 @@ One authenticated session at a time: a newer authenticated connection supersedes
 | `video.get` | `videoId?` | `{videoId, title, visibility, durationSeconds, createdAt, folderId, passwordProtected, linkExpiresAt, viewUrl, editUrl, stage:"uploading"\|"processing"\|"ready"\|"failed", uploadedBytes, totalBytes, error?}` |
 | `video.list` | `limit?` (1–50, default 10), `query?` | `{videos:[{videoId, title, createdAt, durationSeconds, visibility, viewUrl, editUrl}]}` |
 | `video.update` | `videoId?`, `title?`, `visibility?`, `password?` (1–200 chars, null removes), `expiresAt?` (future ISO time, null never) | `{videoId, title, visibility, passwordProtected, linkExpiresAt, viewUrl, editUrl}`. Needs at least one change. The password is never returned |
-| `video.delete` | `videoId` (required), `confirm: true` | `{deleted:true, videoId, inTrash:true, note}`. Moves it to trash (gone for good after 7 days). No default video; refuses without `confirm` |
+| `video.delete` | `videoId` (required), `confirm: true` or `dryRun: true` | `{deleted:true, videoId, inTrash:true, note}`, or with `dryRun` `{dryRun:true, wouldDelete:{videoId, title, createdAt, durationSeconds, visibility, views, viewUrl, editUrl}, note}` and nothing deleted. Moves it to trash (gone for good after 7 days). No default video; refuses without `confirm` |
 | `video.restore` | `videoId` (required) | `{restored:true, videoId, viewUrl, editUrl}` |
 | `trash.list` | none | `{trashDays, videos:[{videoId, title, kind, deletedAt, purgesAt, durationSeconds}]}` |
 | `video.engagement` | `videoId?` | `{videoId, views, viewsBy:{sources:[{label,count}], linkPage, embedded, countries:[{label,count}]} or null, likes, likedByUser, comments:[{id, body, createdAt, author}], viewUrl, editUrl}` |

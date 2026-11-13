@@ -4,6 +4,7 @@
 // through the extension, so the server's own permission checks apply.
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { BridgeError, ErrorCode } from "../protocol/errors.js";
 import { Method } from "../protocol/methods.js";
 import { parseVideoParams, videoParams } from "../protocol/video.js";
 import type { Call } from "../workflows.js";
@@ -29,11 +30,21 @@ export const registerLibraryTools = (server: McpServer, call: Call, handle: Hand
     "delete_video",
     {
       title: "Delete a video",
-      description: `${PRO} Delete a video from recordful.app. It goes to trash, where restore_video can bring it back for 7 days; after that it and its files are gone for good. There is no default video: name it. Ask the user to confirm this exact video (title and link) first, then call with confirm: true.`,
+      description: `${PRO} Delete a video from recordful.app. It goes to trash, where restore_video can bring it back for 7 days; after that it and its files are gone for good. There is no default video: name it. Call with dryRun: true first to get what would go, show the user, and only after their yes call again with confirm: true.`,
       inputSchema: videoParams.remove,
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true },
     },
-    async (args) => handle(() => call(Method.VideoDelete, parseVideoParams(videoParams.remove, args), 40_000)),
+    async (args) =>
+      handle(() => {
+        const params = parseVideoParams(videoParams.remove, args);
+        if (params.dryRun === params.confirm) {
+          throw new BridgeError(
+            ErrorCode.InvalidParams,
+            "Pass dryRun: true to see what would be deleted, or confirm: true once the user has said yes to this exact video (not both).",
+          );
+        }
+        return call(Method.VideoDelete, params, 40_000);
+      }),
   );
 
   server.registerTool(

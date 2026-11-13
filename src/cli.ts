@@ -64,6 +64,7 @@ Videos (uploads and transcripts need Recordful Pro):
 Manage videos, comments and folders (Recordful Pro; change things only when the user asked):
   recordful-mcp update [<videoId>] [--title <t>] [--visibility private|workspace|public]
                      [--password-stdin | --no-password] [--expires <ISO time> | --no-expiry]
+  recordful-mcp delete <videoId> --dry-run  What would be deleted; changes nothing
   recordful-mcp delete <videoId> --yes      To trash for 7 days; --yes confirms this exact video
   recordful-mcp trash                       Deleted videos
   recordful-mcp restore <videoId>           Bring one back out of trash
@@ -544,6 +545,18 @@ const runCommand = async (command: string, parsed: Parsed, config: BridgeConfig,
     case "delete":
       return withRecordful(config, logger, quiet, async (call) => {
         if (!positional[0]) throw new BridgeError(ErrorCode.InvalidParams, "delete needs the video ID (recordful-mcp videos lists them)");
+        if (flags["dry-run"] === true) {
+          const preview = (await call(Method.VideoDelete, { videoId: positional[0], dryRun: true }, 40_000)) as {
+            wouldDelete: Record<string, unknown>;
+            note: string;
+          };
+          const v = preview.wouldDelete;
+          return show(json, preview, () => {
+            out(`Would delete: ${v.title ?? "Untitled"} (${v.videoId}), recorded ${v.createdAt}, ${v.views} views`);
+            out(`Watch: ${v.viewUrl}`);
+            note(preview.note);
+          });
+        }
         if (flags.yes !== true) {
           throw new BridgeError(ErrorCode.InvalidParams, "Deleting moves the video to trash, and it's gone for good after 7 days. Check it is the right one, then run again with --yes.");
         }

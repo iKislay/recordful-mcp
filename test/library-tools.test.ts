@@ -99,6 +99,8 @@ describe("library tools", () => {
     expect(falseConfirm.isError).toBe(true);
     const noVideo = await client.callTool({ name: "delete_video", arguments: { confirm: true } });
     expect(noVideo.isError).toBe(true);
+    const both = await client.callTool({ name: "delete_video", arguments: { videoId: VIDEO, confirm: true, dryRun: true } });
+    expect(both.isError).toBe(true);
     expect(deletes).toBe(0);
 
     const ok = await client.callTool({ name: "delete_video", arguments: { videoId: VIDEO, confirm: true } });
@@ -127,6 +129,19 @@ describe("library tools", () => {
     ]);
     expect(bad.every((r) => r.isError)).toBe(true);
     expect(sent).toEqual([{ password: "s3cret", expiresAt: later }, { password: null, expiresAt: null }]);
+  });
+
+  it("passes a dry run through so the user sees what would go", async () => {
+    const sent: unknown[] = [];
+    const client = await setup({
+      "video.delete": (p) => {
+        sent.push(p);
+        return { dryRun: true, wouldDelete: { videoId: p.videoId, title: "Demo" } };
+      },
+    });
+    const out = json(await client.callTool({ name: "delete_video", arguments: { videoId: VIDEO, dryRun: true } }));
+    expect(out).toMatchObject({ dryRun: true, wouldDelete: { title: "Demo" } });
+    expect(sent).toEqual([{ videoId: VIDEO, dryRun: true }]);
   });
 
   it("deletes a comment only when it is named and confirmed", async () => {
