@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0 (2026-11-14)
+
+Motion graphics for Recordful videos that don't look generated. Recordful Motion (the web editor in Chrome 157 or later, and desktop 2.2) adds a HyperFrames composition as a motion layer.
+
+- **`make_motion` prompt.** Makes a title, lower third or callout for a Recordful video as one self-contained HyperFrames composition, with the motion guide: shot recipes with timings, the registry blocks to start from, and a review checklist with the defaults to avoid.
+- **`recordful-motion` skill.** The same guide as a skill (`SKILL.md` with `references/shots.md` and `references/review.md`), installed beside `record-demo` by `install` and the Claude Code plugin. Recipes adapted from HyperFrames' own references (Apache-2.0) and two MIT-licensed motion packs, credited in the skill.
+- **Skills install file by file**, so a skill with reference files arrives whole.
+
 ## 1.2.0 (2026-11-14)
 
 Run your Recordful library from your AI app: summaries, analytics, trash, link locks, comments and your team. Needs Recordful 4.8.0 for the new tools; with an older Recordful they answer `UNKNOWN_METHOD`.
