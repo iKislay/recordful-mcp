@@ -38,6 +38,8 @@ Page tools use synthetic browser events. Links, buttons, checkboxes, form fields
 
 `record_feature(feature, url?)`: the full plan-and-record workflow. In Claude Code it's `/mcp__recordful__record_feature`, or `/record-demo` with the plugin.
 
+`make_motion(ask?)`: the recordful-motion skill as one message: how to make a Recordful Motion layer (title, lower third, callout, number callout, chapter or end card) as a HyperFrames composition, its shot recipes and its review checklist.
+
 ## Command line
 
 ```text

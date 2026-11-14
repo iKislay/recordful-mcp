@@ -24,7 +24,7 @@ Or add it by hand:
 <details open>
 <summary><b>Claude Code</b></summary>
 
-The plugin adds the server, a `record-demo` skill and a `/record-demo` command:
+The plugin adds the server, a `record-demo` skill, a `recordful-motion` skill (motion graphics that don't look AI-made) and a `/record-demo` command:
 
 ```text
 /plugin marketplace add iKislay/recordful-mcp
@@ -109,7 +109,7 @@ Ask in plain words:
 - "Screenshot my Figma window." / "Take a screenshot of my whole screen." With the [Recordful desktop app](https://recordful.app/download), your AI screenshots the desktop too: a screen, a window by name, or an area you drag. Turn it on once in the app: **Settings → AI agents → Let AI agents take screenshots**. Each screenshot opens in the app's editor, with a notification naming the AI that took it.
 - "Upload that and give me the link." / "What did I say in the last recording?" (Recordful Pro)
 
-The AI works out the flow, uses test data (never your real accounts), records with pauses while it thinks, and stops so the editor opens. Apps that support MCP prompts also offer **record_feature**, a guided version of this workflow. While an app is connected, Recordful's icon shows an **AI** badge.
+The AI works out the flow, uses test data (never your real accounts), records with pauses while it thinks, and stops so the editor opens. Apps that support MCP prompts also offer **record_feature**, a guided version of this workflow, and **make_motion**, which makes a title, lower third or callout for a Recordful video as a HyperFrames composition, with shot recipes and a review checklist that keep it from looking generated. While an app is connected, Recordful's icon shows an **AI** badge.
 
 ### Free and Pro
 

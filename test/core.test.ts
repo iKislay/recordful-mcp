@@ -80,6 +80,7 @@ const setup = async (transport: RecorderTransport) => {
     copy: {
       instructions: "Hosted instructions.",
       recordFeaturePrompt: (feature, url) => `Hosted prompt for ${feature} at ${url ?? "?"}`,
+      motionGuide: (ask) => `Hosted motion guide for ${ask ?? "?"}`,
     },
     timeouts: { connectWaitMs: 1_234, requestTimeoutMs: 10_000 },
     logger: silentLogger,

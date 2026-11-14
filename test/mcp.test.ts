@@ -290,7 +290,7 @@ describe("MCP prompts and pairing", () => {
   it("offers the record_feature workflow as a prompt", async () => {
     const { client } = await setup();
     const { prompts } = await client.listPrompts();
-    expect(prompts.map((p) => p.name)).toEqual(["record_feature"]);
+    expect(prompts.map((p) => p.name)).toEqual(["record_feature", "make_motion"]);
     expect(prompts[0]?.arguments?.map((a) => [a.name, a.required ?? false])).toEqual([
       ["feature", true],
       ["url", false],
@@ -304,6 +304,18 @@ describe("MCP prompts and pairing", () => {
     expect(text).toContain("It should be at http://localhost:3000.");
     expect(text).toMatch(/test accounts and data only/);
     expect(text).toMatch(/start_recording/);
+  });
+
+  it("offers the motion guide, with its shots and review, as a prompt", async () => {
+    const { client } = await setup();
+    const prompt = await client.getPrompt({ name: "make_motion", arguments: { ask: "a lower third for Ana" } });
+    const text = (prompt.messages[0]?.content as { text: string }).text;
+    expect(text).toMatch(/^The person asked for: a lower third for Ana/);
+    expect(text).not.toMatch(/^---/m);
+    expect(text).toMatch(/Turn the ask into numbers/);
+    expect(text).toMatch(/<!-- references\/shots\.md -->/);
+    expect(text).toMatch(/<!-- references\/review\.md -->/);
+    expect(text).toMatch(/Banned by default/);
   });
 
   it("works out where the app runs when no url is given", async () => {

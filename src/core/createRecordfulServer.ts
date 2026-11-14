@@ -407,5 +407,25 @@ export const createRecordfulServer = (deps: RecordfulServerDeps): McpServer => {
     }),
   );
 
+  // How to make a motion layer that looks directed rather than generated
+  // (the recordful-motion skill), for clients that don't load skills.
+  server.registerPrompt(
+    "make_motion",
+    {
+      title: "Make a motion graphic",
+      description:
+        "Make a title, lower third, callout, number callout, chapter card or end card for a Recordful video as a HyperFrames composition, with shot recipes and a review checklist that keep it from looking AI-generated.",
+      argsSchema: {
+        ask: z
+          .string()
+          .optional()
+          .describe('What to make, e.g. "a lower third for Ana, head of design, at 0:04".'),
+      },
+    },
+    ({ ask }) => ({
+      messages: [{ role: "user", content: { type: "text", text: copy.motionGuide(ask) } }],
+    }),
+  );
+
   return server;
 };

@@ -30,6 +30,8 @@ export interface RecorderTransport {
 export interface ServerCopy {
   instructions: string;
   recordFeaturePrompt: (feature: string, url?: string) => string;
+  /** The recordful-motion skill as one message, for the make_motion prompt. */
+  motionGuide: (ask?: string) => string;
 }
 
 export interface Timeouts {

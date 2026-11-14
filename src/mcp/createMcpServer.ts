@@ -8,6 +8,7 @@ import type { BridgeConfig } from "../config.js";
 import { desktopCall } from "../desktop.js";
 import { createRecordfulServer } from "../core/createRecordfulServer.js";
 import type { Logger } from "../logger.js";
+import { SKILLS } from "../skill.js";
 import { localTransport } from "./localTransport.js";
 
 export interface McpServerDeps {
@@ -54,6 +55,21 @@ If you have a browser tool of your own you can use it for the walkthrough instea
 "screen" mode always shows Chrome's screen picker, which the user must answer.
 `.trim();
 
+/**
+ * The recordful-motion skill as one message: its SKILL.md without the
+ * frontmatter, then its references, so any MCP client has the whole guide.
+ */
+export const motionGuide = (ask?: string): string => {
+  const files = SKILLS["recordful-motion"] ?? {};
+  const body = (files["SKILL.md"] ?? "").replace(/^---\n[\s\S]*?\n---\n+/, "");
+  const references = Object.entries(files)
+    .filter(([name]) => name.startsWith("references/"))
+    .map(([name, text]) => `<!-- ${name} -->\n${text}`);
+  return [ask?.trim() ? `The person asked for: ${ask.trim()}\n` : "", body, ...references]
+    .filter(Boolean)
+    .join("\n\n");
+};
+
 export const recordFeaturePrompt = (feature: string, url?: string): string => `Record a product demo video of this feature with Recordful: ${feature}
 
 1. Understand it as a user sees it. If you or the user just built it, read the changes (git diff, recent commits, routes, pages, components). List the screens and moments worth showing: the main path first, then at most one or two telling states (for example a validation error). Leave out internals.
@@ -70,7 +86,7 @@ export const recordFeaturePrompt = (feature: string, url?: string): string => `R
 export const createMcpServer = (deps: McpServerDeps): McpServer =>
   createRecordfulServer({
     transport: localTransport(deps.bridge),
-    copy: { instructions: INSTRUCTIONS, recordFeaturePrompt },
+    copy: { instructions: INSTRUCTIONS, recordFeaturePrompt, motionGuide },
     timeouts: deps.config,
     logger: deps.logger,
     version: deps.version,
