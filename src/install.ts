@@ -6,7 +6,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir, platform } from "node:os";
 import { dirname, join } from "node:path";
-import { SKILL_TEXT } from "./skill.js";
+import { SKILLS } from "./skill.js";
 
 export const TARGETS = ["claude", "cursor", "codex", "opencode", "vscode", "windsurf", "gemini", "antigravity"] as const;
 export type Target = (typeof TARGETS)[number];
@@ -150,14 +150,21 @@ const SKILL_DIRS: Partial<Record<Target, string>> = {
   codex: ".codex",
 };
 
-const installSkill = (target: Target, apply: boolean): Change | null => {
+/** Each Recordful skill, written file by file: one change per skill, named by its SKILL.md. */
+const installSkills = (target: Target, apply: boolean): Change[] => {
   const dir = SKILL_DIRS[target];
-  if (!dir) return null;
-  const path = join(home(), dir, "skills", "record-demo", "SKILL.md");
-  const text = readText(path);
-  if (text !== null && text.replace(/\r\n/g, "\n") === SKILL_TEXT) return { component: "skill", action: "unchanged", path };
-  if (apply) writeText(path, SKILL_TEXT);
-  return { component: "skill", action: text === null ? "create" : "update", path };
+  if (!dir) return [];
+  return Object.entries(SKILLS).map(([name, files]) => {
+    const folder = join(home(), dir, "skills", name);
+    const path = join(folder, "SKILL.md");
+    const fresh = readText(path) === null;
+    const stale = Object.entries(files).filter(
+      ([file, text]) => readText(join(folder, file))?.replace(/\r\n/g, "\n") !== text,
+    );
+    if (!stale.length) return { component: "skill", action: "unchanged", path };
+    if (apply) for (const [file, text] of stale) writeText(join(folder, file), text);
+    return { component: "skill", action: fresh ? "create" : "update", path };
+  });
 };
 
 const installMcp = (target: Target, apply: boolean): Change => {
@@ -202,8 +209,7 @@ export const install = (target: Target, opts: { apply: boolean; component?: Comp
   const changes: Change[] = [];
   if (component !== "skill") changes.push(installMcp(target, opts.apply));
   if (component !== "mcp") {
-    const skill = installSkill(target, opts.apply);
-    if (skill) changes.push(skill);
+    changes.push(...installSkills(target, opts.apply));
   }
   return { target, name: TARGET_NAMES[target], applied: opts.apply, changes, restart: RESTART[target] };
 };

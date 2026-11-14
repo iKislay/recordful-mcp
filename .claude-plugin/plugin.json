@@ -1,7 +1,7 @@
 {
   "name": "recordful",
   "version": "1.2.0",
-  "description": "Record product demos in Chrome with Recordful, upload them and read back transcripts: the recordful MCP server, a record-demo skill and a /record-demo command.",
+  "description": "Record product demos in Chrome with Recordful, upload them and read back transcripts: the recordful MCP server, record-demo and recordful-motion skills and a /record-demo command.",
   "author": {
     "name": "Kislay",
     "url": "https://recordful.app"

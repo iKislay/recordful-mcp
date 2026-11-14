@@ -11,7 +11,7 @@ import { install, TARGETS } from "../src/install.js";
 import { silentLogger } from "../src/logger.js";
 import { createMcpServer } from "../src/mcp/createMcpServer.js";
 import { SETUP_PROMPT } from "../src/setupPrompt.js";
-import { SKILL_TEXT } from "../src/skill.js";
+import { SKILL_TEXT, SKILLS } from "../src/skill.js";
 import { memoryPairings } from "./helpers/fakeExtension.js";
 
 let dir: string;
@@ -34,7 +34,7 @@ describe("install", () => {
   it("shows what it would do and writes nothing without apply", () => {
     const r = install("cursor", { apply: false });
     expect(r.applied).toBe(false);
-    expect(r.changes.map((c) => `${c.component}:${c.action}`)).toEqual(["mcp:create", "skill:create"]);
+    expect(r.changes.map((c) => `${c.component}:${c.action}`)).toEqual(["mcp:create", "skill:create", "skill:create"]);
     expect(() => read(".cursor", "mcp.json")).toThrow();
     expect(() => read(".cursor", "skills", "record-demo", "SKILL.md")).toThrow();
   });
@@ -43,8 +43,16 @@ describe("install", () => {
     install("cursor", { apply: true });
     expect(JSON.parse(read(".cursor", "mcp.json"))).toEqual({ mcpServers: { recordful: { command: "npx", args: ["-y", "recordful-mcp"] } } });
     expect(read(".cursor", "skills", "record-demo", "SKILL.md")).toBe(SKILL_TEXT);
+    // The motion skill with its references, file by file.
+    for (const [file, text] of Object.entries(SKILLS["recordful-motion"]!)) {
+      expect(read(".cursor", "skills", "recordful-motion", ...file.split("/"))).toBe(text);
+    }
     const again = install("cursor", { apply: true });
-    expect(again.changes.map((c) => c.action)).toEqual(["unchanged", "unchanged"]);
+    expect(again.changes.map((c) => c.action)).toEqual(["unchanged", "unchanged", "unchanged"]);
+    // A reference changed by hand is put back, and reported as an update.
+    writeFileSync(join(dir, ".cursor", "skills", "recordful-motion", "references", "shots.md"), "old");
+    expect(install("cursor", { apply: true }).changes.map((c) => c.action)).toEqual(["unchanged", "unchanged", "update"]);
+    expect(read(".cursor", "skills", "recordful-motion", "references", "shots.md")).toBe(SKILLS["recordful-motion"]!["references/shots.md"]);
   });
 
   it("keeps other servers and settings when it merges", () => {
@@ -109,13 +117,19 @@ describe("install", () => {
 
   it("only writes skills for apps that read them, and respects --component", () => {
     expect(install("windsurf", { apply: false }).changes.map((c) => c.component)).toEqual(["mcp"]);
-    expect(install("claude", { apply: false, component: "skill" }).changes.map((c) => c.component)).toEqual(["skill"]);
+    expect(install("claude", { apply: false, component: "skill" }).changes.map((c) => c.component)).toEqual(["skill", "skill"]);
     for (const t of TARGETS) expect(install(t, { apply: false, component: "skill" }).restart.length).toBeGreaterThan(10);
   });
 
-  it("keeps the installed skill and the plugin's skill identical", () => {
+  it("keeps the installed skills and the plugin's skills identical", () => {
     const plugin = readFileSync(new URL("../skills/record-demo/SKILL.md", import.meta.url), "utf8").replace(/\r\n/g, "\n");
     expect(SKILL_TEXT).toBe(plugin);
+    for (const [name, files] of Object.entries(SKILLS)) {
+      for (const [file, text] of Object.entries(files)) {
+        const onDisk = readFileSync(new URL(`../skills/${name}/${file}`, import.meta.url), "utf8").replace(/\r\n/g, "\n");
+        expect(text, `${name}/${file}`).toBe(onDisk);
+      }
+    }
   });
 });
 

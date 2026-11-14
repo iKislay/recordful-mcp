@@ -8,7 +8,7 @@ npm run dev          # run the CLI from source
 npm run pack:mcpb    # build recordful.mcpb for Claude Desktop
 ```
 
-`src/skill.ts` is generated from `skills/record-demo/SKILL.md`: run `node scripts/sync-skill.mjs` after editing the skill (a test fails if they differ). The help center's setup-prompt page is generated from `src/setupPrompt.ts`: `npm run build && node scripts/sync-help-prompt.mjs ../recordful-help`.
+`src/skill.ts` is generated from `skills/` (every skill, every `.md` file in it): run `node scripts/sync-skill.mjs` after editing a skill (a test fails if they differ). The help center's setup-prompt page is generated from `src/setupPrompt.ts`: `npm run build && node scripts/sync-help-prompt.mjs ../recordful-help`.
 
 ## Live end-to-end tests
 
@@ -42,13 +42,13 @@ src/
   setupGuide.ts     `setup` output
   auth/             pairing store, HMAC challenge-response
   bridge/           WebSocket server: pairing, sessions, heartbeat, requests, port supervision
-  mcp/              MCP tools and the record_feature prompt
+  mcp/              MCP tools and the record_feature and make_motion prompts
   protocol/         wire messages (zod), methods, page-tool params, error codes
 test/               vitest: pairing, handshake security, requests, MCP tools and prompt, config
 scripts/            live end-to-end tests, MCPB packer
 .claude-plugin/     plugin manifest and marketplace: the repo root is the plugin (Open Plugins layout)
 .mcp.json           the plugin's MCP server config
-skills/             record-demo skill
+skills/             record-demo and recordful-motion skills
 commands/           /record-demo command
 mcpb/               Claude Desktop extension manifest and icon
 docs/               protocol, reference, findings, roadmap, hosted MCP plan
