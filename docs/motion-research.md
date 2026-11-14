@@ -65,6 +65,37 @@ Tella times graphics to **what you said**. Recordful is the only one that also k
 - **Later, in the product:** preview with `<hyperframes-player>` in a sandboxed iframe. Rendering needs headless Chrome + FFmpeg, which Vercel functions can't run. It would need a render worker (HyperFrames' AWS Lambda package, or a container) with a cache keyed by the HTML's hash, and credits.
 - Avoid Remotion (company license above 3 people) and Diffusion Studio (non-commercial).
 
+## 5a. Decided 2026-11-14: HyperFrames for all motion, rendered in the editor itself
+
+The user's calls: use HyperFrames rather than our own text and shape drawing ("no need to reinvent the wheel"), and render locally (no HeyGen cloud, no Lambda). This replaces the canvas parts of Layer 1, the whole of Layer 2, and the pre-rendered clips of Layer 3. Blur and spotlight masks stay in our renderer (they act on the footage and follow zoom and crop); they shipped on recordful-ee branch `overlays`.
+
+**Approach: no render step at all. The editor draws each HyperFrames frame itself, with Chrome's HTML-in-Canvas.**
+
+| | Pre-rendered transparent video (agent CLI or desktop) | **Live in the editor (chosen)** |
+| --- | --- | --- |
+| Needs on the machine | Node 22, FFmpeg, headless Chrome, or the desktop app | Nothing: Chrome 157+ or the desktop app |
+| Changing a title's text or the video's shape | Render again, upload again | Instant: it is drawn from the source |
+| What is stored | A video file per layer, plus a cache to keep in step | The composition (one HTML file) and its timing |
+| Matches HyperFrames' own render | Yes | Yes, measured below |
+
+How it works:
+1. A motion layer is a self-contained composition: HyperFrames' own `bundleToSingleHtml` (`@hyperframes/core/compiler`, runtime and fonts inlined), plus `start`/`end` in seconds of the recording's file and its variables (title text, colours).
+2. The editor loads it in a sandboxed iframe (`sandbox="allow-scripts"`, an opaque origin, CSP `default-src 'none'`), so composition code from an agent, a template or a co-editor can't reach the app, its cookies or the network.
+3. For each frame, a small driver in the iframe calls HyperFrames' own `window.__player.renderSeek(t)` (the same deterministic seek its renderer uses), waits for the canvas `paint` event, draws the composition root with `drawElementImage`, and posts an `ImageBitmap` back. `drawFrame` draws it over the picture, so preview and export share one path.
+4. Agents author compositions with the HyperFrames skills and CLI on their machine (check, snapshot), and `recordful-mcp` bundles and attaches them. People without an agent pick a template (registry blocks, bundled at build time) and edit its variables in the panel.
+
+Measured on this machine (spike in the session scratchpad, `lt-clean-bar` lower third):
+- Chrome 157.0 has `drawElementImage` on by default, on `OffscreenCanvas` too, and the canvas stays origin-clean (it can be exported).
+- The desktop app's Electron 43.8 runs Chromium 150: the API is there behind `enable-blink-features=CanvasDrawElement` (proven with that switch; absent without it). Chromium before 155 uses the `layoutsubtree` attribute, 155 and later `content="drawable"`; the driver sets both.
+- 7 ms per 1080p frame through the sandbox, including the bitmap hand-off.
+- Against `hyperframes snapshot` at 0.3, 0.6, 1.0 and 2.5 s: the same motion, timing, layout and colours. Under 0.75% of pixels differ, and those are the font: the spike blocked fonts, while the bundler inlines HyperFrames' own font files.
+
+Limits and what to check while building:
+- Firefox, Safari and Chrome before 157 have no HTML-in-Canvas. There, the layer still previews (the iframe shown over the picture), and exporting says it needs Chrome or the desktop app.
+- A hidden or off-screen cross-origin iframe may be throttled by Chrome. The spike's iframe was on screen; check a hidden one before relying on it.
+- Compositions with video inside them (HyperFrames pre-extracts video frames for its renderer) are out of scope at first. Motion layers are graphics over our own recording.
+- GSAP is pinned and inlined (its standard no-charge licence allows commercial use). The HyperFrames packages are Apache-2.0.
+
 ## 6. Suggested order
 
 1. **Layer 1 overlays** in the web editor (text and title cards, arrows and shapes, blur and highlight with keyframes), sharing the model with the desktop editor. Then **B** (element lift) and **D** (brand from the page). No AI needed; every user benefits.
