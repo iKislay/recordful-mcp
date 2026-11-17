@@ -12,7 +12,6 @@ import { Method } from "../protocol/methods.js";
 import { pageExtraWaitMs, pageParams, parsePageParams, type PageMethod } from "../protocol/page.js";
 import type { RecorderTransport, ServerCopy, Timeouts } from "./transport.js";
 import { hostedTools } from "./hostedTools.js";
-import { registerLibraryTools } from "./libraryTools.js";
 import { registerVideoTools } from "./videoTools.js";
 
 /** Calls the Recordful desktop app (src/desktop.ts); its JSON answer. */
@@ -382,10 +381,6 @@ export const createRecordfulServer = (deps: RecordfulServerDeps): McpServer => {
     }
   };
   registerVideoTools(server, call, handleTool);
-
-  // ---- managing videos, folders and comments (Pro) ---------------------------
-
-  registerLibraryTools(server, call, handleTool);
 
   // ---- everything else on recordful.app, by proxy (hostedTools.ts) ------------
   // After the local tools, so those win on a name clash.

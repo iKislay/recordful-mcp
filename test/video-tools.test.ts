@@ -273,22 +273,13 @@ describe("get_transcript", () => {
 });
 
 describe("list tools", () => {
-  it("list_videos passes limit and query, and validates them", async () => {
-    const seen: Record<string, unknown>[] = [];
-    const client = await setup({
-      "video.list": (p) => {
-        seen.push(p);
-        return { videos: [{ videoId: VIDEO, title: "Demo", ...LINKS }] };
-      },
-    });
-    const out = textOf(await client.callTool({ name: "list_videos", arguments: { limit: 5, query: "Demo" } }));
-    expect(out.videos).toHaveLength(1);
-    expect(seen).toEqual([{ limit: 5, query: "Demo" }]);
-    expect((await client.callTool({ name: "list_videos", arguments: { limit: 500 } })).isError).toBe(true);
-  });
-
   it("list_recordings lists local takes", async () => {
     const client = await setup({ "takes.list": () => ({ takes: [{ takeId: "recording-1.webm", bytes: 10 }] }) });
     expect(textOf(await client.callTool({ name: "list_recordings", arguments: {} })).takes).toHaveLength(1);
+  });
+
+  it("get_storage reads the extension's storage answer", async () => {
+    const client = await setup({ "storage.get": () => ({ usedBytes: 1, limitBytes: 100, usedPercent: 1, canUpload: true }) });
+    expect(textOf(await client.callTool({ name: "get_storage", arguments: {} })).canUpload).toBe(true);
   });
 });

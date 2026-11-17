@@ -1,6 +1,8 @@
 // Tools for recordings once they exist: upload a local one, follow a video
-// until it's ready, list videos and local recordings, and read a transcript
-// back. The waiting lives in ../workflows.ts (shared with the CLI); here it
+// until it's ready, list local recordings, read a transcript back, and check
+// storage before an upload. The rest of the library (list, rename, share,
+// delete, folders, comments, analytics, members) is the hosted server's,
+// offered by proxy (hostedTools.ts). The waiting lives in ../workflows.ts (shared with the CLI); here it
 // is wrapped as tools that report MCP progress while they wait.
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
@@ -85,18 +87,6 @@ export const registerVideoTools = (server: McpServer, call: Call, handle: Handle
   );
 
   server.registerTool(
-    "list_videos",
-    {
-      title: "List videos",
-      description:
-        "List the user's videos on recordful.app, newest first: videoId, title, date, length, who may watch, and links. Optionally filter by title.",
-      inputSchema: videoParams.list,
-      annotations: { readOnlyHint: true, openWorldHint: true },
-    },
-    async (args) => handle(() => call(Method.VideoList, parseVideoParams(videoParams.list, args), 40_000)),
-  );
-
-  server.registerTool(
     "get_summary",
     {
       title: "Read the AI summary and chapters",
@@ -124,5 +114,17 @@ export const registerVideoTools = (server: McpServer, call: Call, handle: Handle
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: true },
     },
     async (args, extra) => handle(() => transcriptAndWait(call, args, progressFor(extra))),
+  );
+
+  server.registerTool(
+    "get_storage",
+    {
+      title: "Check storage",
+      description:
+        "Recordful Pro only (check get_status recorder.account.plan first). How much of the user's Recordful cloud storage is used (bytes, percent) and whether more can be uploaded. Read-only.",
+      inputSchema: {},
+      annotations: { readOnlyHint: true, openWorldHint: true },
+    },
+    async () => handle(() => call(Method.StorageGet, {}, 40_000)),
   );
 };
