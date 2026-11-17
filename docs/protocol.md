@@ -107,6 +107,7 @@ One authenticated session at a time: a newer authenticated connection supersedes
 | `members.list` | none | `{members:[{name, email, role}], invites:[{email}]}` |
 | `members.invite` | `email`, `confirm: true` | `{invited:true, email}`. Workspace owner only (`FORBIDDEN`); already a member or invited and the member limit come back as errors with a message |
 | `storage.get` | none | `{usedBytes, limitBytes, usedPercent, canUpload}` |
+| `cloud.mcp` | `message` (one JSON-RPC request or notification) | The JSON-RPC response recordful.app/mcp gave, or `null` for a notification. The extension POSTs `message` to `${site}/mcp` with `Authorization: Bearer <its session token>` and `Accept: application/json, text/event-stream`; signed out or an HTTP 401 fails with `NOT_SIGNED_IN`, unreachable with `CLOUD_UNREACHABLE`, any other non-2xx with `CLOUD_ERROR` (the server's message). A tool's own errors (`forbidden`, `not_found`, ...) are inside a 200 response and come back untouched |
 | `video.transcript` | `videoId?`, `start?` (default true) | `{videoId, status:"done", text, vtt, viewUrl, editUrl}` or `{status:"working"\|"uploading"\|"none"}` or `{status:"failed", reason}`. One look; the MCP server and CLI poll it to wait |
 
 Requests run on queues in the extension: recorder methods (`recording.*`, `capture.probe`) one at a time on one queue, page methods one at a time on another, uploads on a third, and the read-only methods on none, so they never wait behind the others.

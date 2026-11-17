@@ -45,6 +45,9 @@ export const Method = {
   MembersList: "members.list",
   MembersInvite: "members.invite",
   StorageGet: "storage.get",
+  // One JSON-RPC message for recordful.app/mcp, sent with the extension's sign-in
+  // (src/core/hostedTools.ts proxies the hosted tools through it).
+  CloudMcp: "cloud.mcp",
 } as const;
 export type Method = (typeof Method)[keyof typeof Method];
 
