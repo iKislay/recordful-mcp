@@ -23,14 +23,17 @@
 | `list_recordings` | Recordings saved on this computer, newest first, with their `takeId` and `videoId` once uploaded |
 | `upload_recording` | **Pro.** Uploads a local recording (default: the last one) and waits until it's up; returns the `videoId` and its view and edit links. Never uploads the same recording twice unless `force` |
 | `get_video` | A video's title, length, visibility, links and upload stage (`uploading` → `processing` → `ready`); `wait` keeps checking until it's ready |
-| `list_videos` | The user's videos on recordful.app, newest first, optionally filtered by title |
 | `get_transcript` | **Pro.** What was said, as `text`, `vtt` or both. Transcribes on first use and waits, including for an upload still in progress |
+| `get_summary` | **Pro.** The AI summary and chapters; `generate` writes one (spends AI credits) |
+| `get_storage` | **Pro.** Cloud storage used, and whether more can be uploaded |
+
+While the user is signed in to Recordful, the hosted server's tools (recordful.app/mcp: `list_videos`, editing, seeing, sharing, folders, tags, comments, trash, analytics, members, webhooks, account) are listed here too, by proxy through the extension's sign-in (`cloud.mcp`), with their own names, schemas and results. A local tool of the same name wins. Signed out or offline, they are absent.
 
 Tools that wait report MCP progress (upload percentage, transcription) to apps that ask for it, and always return within their `timeoutMs`; call again to keep waiting. Without a `videoId`, video tools use the last recording (stopped or uploaded in this browser session), else the newest video in the account.
 
 ### Plans
 
-`get_status` reports `recorder.account.plan`: `pro`, `free`, `signed-out`, or `unavailable` (a build without cloud features). Recording, page tools and the editor work on every plan. Uploads, cloud videos and transcripts need Pro: on other plans they fail at once with `PRO_REQUIRED` or `NOT_SIGNED_IN`, whose message says what still works and whose `data` carries `plan` and `upgradeUrl`.
+`get_status` reports `recorder.account.plan`: `pro`, `free`, `signed-out`, or `unavailable` (a build without cloud features). Recording, page tools and the editor work on every plan. Uploads, cloud videos and transcripts need Pro: on other plans they fail at once with `PRO_REQUIRED` or `NOT_SIGNED_IN`, whose message says what still works and whose `data` carries `plan` and `upgradeUrl`. Hosted tools use the hosted codes instead: `forbidden` for a Pro tool on another plan (`create_checkout_link` gives an upgrade link), `unauthorized` for a sign-in that no longer works.
 
 Page tools use synthetic browser events. Links, buttons, checkboxes, form fields and form submits work. Native dropdown popups, file pickers, content inside iframes, and actions that need a real user gesture (opening pop-up windows, the clipboard) don't. Details: [protocol.md](protocol.md#page-methods).
 

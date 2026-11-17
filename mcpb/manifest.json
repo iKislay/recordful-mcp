@@ -101,10 +101,6 @@
       "description": "A video's links and upload stage"
     },
     {
-      "name": "list_videos",
-      "description": "Your videos on recordful.app"
-    },
-    {
       "name": "get_transcript",
       "description": "Read back what was said in a video (Pro)"
     },
@@ -121,66 +117,11 @@
       "description": "AI summary and chapters of a video; writes one on request (Pro, AI credits)"
     },
     {
-      "name": "update_video",
-      "description": "Rename a video or change who may watch it (Pro)"
-    },
-    {
-      "name": "get_video_activity",
-      "description": "A video's views, likes and comments (Pro)"
-    },
-    {
-      "name": "comment_on_video",
-      "description": "Comment on a video (Pro)"
-    },
-    {
-      "name": "like_video",
-      "description": "Like or unlike a video (Pro)"
-    },
-    {
-      "name": "list_folders",
-      "description": "The workspace's folders (Pro)"
-    },
-    {
-      "name": "create_folder",
-      "description": "Make a folder (Pro)"
-    },
-    {
-      "name": "move_videos",
-      "description": "File videos into a folder (Pro)"
-    },
-    {
-      "name": "delete_video",
-      "description": "Move a video to the trash; needs the exact video and confirm (Pro)"
-    },
-    {
-      "name": "delete_comment",
-      "description": "Delete one comment; needs the exact comment and confirm (Pro)"
-    },
-    {
-      "name": "list_trash",
-      "description": "Deleted videos and when each is gone for good (Pro)"
-    },
-    {
-      "name": "restore_video",
-      "description": "Bring a video back out of trash (Pro)"
-    },
-    {
-      "name": "get_analytics",
-      "description": "Views per day across the library, and the most viewed (Pro)"
-    },
-    {
-      "name": "list_members",
-      "description": "Who is in the workspace, and who is invited (Pro)"
-    },
-    {
-      "name": "invite_member",
-      "description": "Invite someone by email; owner only, needs confirm (Pro)"
-    },
-    {
       "name": "get_storage",
       "description": "Cloud storage used and left (Pro)"
     }
   ],
+  "tools_generated": true,
   "prompts_generated": true,
   "keywords": [
     "recordful",

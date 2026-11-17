@@ -77,7 +77,7 @@ export const guide = (version: string) => ({
   version,
   summary: "Records the user's Chrome tab with the Recordful extension, drives the page, uploads recordings and reads transcripts back.",
   interfaces: {
-    mcp: "Run by the AI app over stdio (`npx -y recordful-mcp`). Tools below. Preferred when loaded.",
+    mcp: "Run by the AI app over stdio (`npx -y recordful-mcp`). Tools below, plus the hosted recordful.app tools (editing, sharing, library, analytics) while the user is signed in to Recordful. Preferred when loaded.",
     cli: "The same abilities from a shell; every command accepts --json (stdout is the result, stderr is progress and hints).",
   },
   routing:
@@ -93,7 +93,7 @@ export const guide = (version: string) => ({
     "Once per computer: approve the 4-digit pairing code Recordful shows.",
   ],
   plans: {
-    free: "Recording and the editor work. Uploads, links and transcripts need Recordful Pro; get_status shows recorder.account.plan (pro|free|signed-out|unavailable). Say so once and don't retry after PRO_REQUIRED or NOT_SIGNED_IN.",
+    free: "Recording and the editor work. Uploads, links and transcripts need Recordful Pro; get_status shows recorder.account.plan (pro|free|signed-out|unavailable). Say so once and don't retry after PRO_REQUIRED or NOT_SIGNED_IN (or forbidden from a hosted tool; create_checkout_link offers the upgrade).",
     pro: "Uploads, links and transcripts work.",
   },
   safety: [

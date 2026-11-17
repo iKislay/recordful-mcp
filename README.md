@@ -125,6 +125,8 @@ The AI works out the flow, uses test data (never your real accounts), records wi
 | Delete to trash, see the trash, restore | | ✓ |
 | See your team and invite someone (workspace owner) | | ✓ |
 
+While you're signed in to Recordful, your AI also gets every tool of the hosted Recordful server (the same ones claude.ai gets at recordful.app/mcp): editing (cuts, silences, filler words, zooms, captions, chapters, audio, look), looking at a video (storyboard, frames, clicks), sharing, folders, tags, analytics and webhooks. They come through this server with your Recordful sign-in, so there's nothing else to connect; signed out, they're simply not listed.
+
 The AI checks your plan first. On the free plan it records as usual and tells you once that links and transcripts come with Pro, instead of failing. Recordings made while signed in to Pro go to the cloud as they record.
 
 ### From the command line
@@ -169,6 +171,7 @@ Details: [SECURITY.md](https://github.com/iKislay/recordful-mcp/blob/main/SECURI
 | Recording won't start | Click the Recordful icon on the exact tab to record, then retry. `PERMISSIONS_NEEDED`: turn AI agents off and on in Recordful and click **Allow** |
 | Recording waits forever | Recordful may be asking something (microphone access, or the screen picker in screen mode). Answer it |
 | `PRO_REQUIRED` or `NOT_SIGNED_IN` | Uploads and transcripts need a Recordful Pro account, signed in in Recordful. Recording works on every plan |
+| `forbidden` from a hosted tool | That tool needs Recordful Pro (the AI can offer an upgrade link), or only the video's owner can change it |
 | `BRIDGE_UNAVAILABLE` | Something other than recordful-mcp is using port 47823, or an older recordful-mcp is running. Update or close it |
 | No Recordful tools in the AI app | Check `node -v` is 20.10+, then restart the app |
 
