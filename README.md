@@ -111,6 +111,14 @@ Ask in plain words:
 
 The AI works out the flow, uses test data (never your real accounts), records with pauses while it thinks, and stops so the editor opens. Apps that support MCP prompts also offer **record_feature**, a guided version of this workflow, and **make_motion**, which makes a title, lower third or callout for a Recordful video as a HyperFrames composition, with shot recipes and a review checklist that keep it from looking generated. While an app is connected, Recordful's icon shows an **AI** badge.
 
+### Skills
+
+The `skills/` folder holds six [Agent Skills](https://agentskills.io): `record-demo`, `recordful-motion`, and four for editing a video on recordful.app with the hosted connector (`https://recordful.app/mcp`, Recordful Pro): `edit-video`, `remove-mistakes` (retakes, fillers, pauses), `make-short` (a 9:16 clip with captions) and `polish-demo` (zooms, background, click effects, voice, captions, chapters).
+
+- **Any agent:** `npx skills add iKislay/recordful-mcp` installs them (add `--skill edit-video` for one).
+- **Over MCP:** both servers serve them as resources at `skill://recordful/<name>/SKILL.md` with `skills/list` and `skills/get` (the `io.modelcontextprotocol/skills` extension), so apps that load skills from MCP servers need no install.
+- `npx -y recordful-mcp install` and the Claude Code plugin also write them.
+
 ### Free and Pro
 
 | | Free | Pro |
