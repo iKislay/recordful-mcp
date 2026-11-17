@@ -11,6 +11,7 @@ import { BridgeError, ErrorCode } from "../protocol/errors.js";
 import { Method } from "../protocol/methods.js";
 import { pageExtraWaitMs, pageParams, parsePageParams, type PageMethod } from "../protocol/page.js";
 import type { RecorderTransport, ServerCopy, Timeouts } from "./transport.js";
+import { hostedTools } from "./hostedTools.js";
 import { registerLibraryTools } from "./libraryTools.js";
 import { registerVideoTools } from "./videoTools.js";
 
@@ -96,7 +97,10 @@ export const createRecordfulServer = (deps: RecordfulServerDeps): McpServer => {
     await transport.ready(timeouts.connectWaitMs);
     const started = Date.now();
     try {
-      return await transport.request(method, params, timeouts.requestTimeoutMs + extraWaitMs);
+      const result = await transport.request(method, params, timeouts.requestTimeoutMs + extraWaitMs);
+      // The extension answers, so it may reach recordful.app now.
+      void syncHosted();
+      return result;
     } finally {
       log.info("tool call", { method, ms: Date.now() - started });
     }
@@ -382,6 +386,12 @@ export const createRecordfulServer = (deps: RecordfulServerDeps): McpServer => {
   // ---- managing videos, folders and comments (Pro) ---------------------------
 
   registerLibraryTools(server, call, handleTool);
+
+  // ---- everything else on recordful.app, by proxy (hostedTools.ts) ------------
+  // After the local tools, so those win on a name clash.
+
+  const syncHosted = hostedTools(server, call, failure, deps.version, log);
+  void syncHosted();
 
   // ---- prompts -------------------------------------------------------------
   // The whole "record the feature I just built" workflow, shipped with the
