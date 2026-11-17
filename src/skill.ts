@@ -1,6 +1,13 @@
-// The Recordful skills that `recordful-mcp install` writes for the AI app,
-// by skill and by file inside it. Generated from skills/ by
-// scripts/sync-skill.mjs; a test keeps them equal.
+// The Recordful skills, by skill and by file inside it: what `recordful-mcp
+// install` writes for the AI app, and what registerSkills serves over MCP.
+// SKILLS is generated from skills/ by scripts/sync-skill.mjs (a test keeps
+// them equal); the rest is written by hand. recordful-ee's hosted server
+// serves a verbatim copy of this file, so keep it self-contained.
+import { createHash } from "node:crypto";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { ErrorCode, McpError } from "@modelcontextprotocol/sdk/types.js";
+import { z } from "zod";
+
 export const SKILLS: Record<string, Record<string, string>> = {
   "edit-video": {
     "SKILL.md": "---\nname: edit-video\ndescription: Edit a Recordful video on recordful.app - cuts, zooms, captions, frame, speed - by looking at it, planning the change and applying it in one versioned call. Use when the user asks to edit, trim, tighten, fix or change a video that is already on recordful.app (\"cut the first 10 seconds\", \"zoom in on the settings page\", \"make it look nicer\").\n---\n\n# Edit a Recordful video\n\nThe edit tools are on Recordful's hosted connector (https://recordful.app/mcp) and need Recordful Pro and write access. Every edit is undoable in the editor; the recording's files never change.\n\n## 1. Find the video\n\n`search_videos` (by title or by what was said) or `list_videos`, then `get_video`. If several match, ask which one.\n\n## 2. Look before you change\n\n- `get_timeline`: clips, zooms, captions, frame, background, audio, and the edit's `version`. Every time is in seconds of the video as it plays now.\n- `get_storyboard`: 16 frames on one sheet to see what happens when. `get_video_frame` looks closer at one moment. On `not_ready`, call again after `retryAfterSeconds`.\n- `get_transcript` (with `query` on long videos) to find a moment by what was said.\n\n## 3. Plan and show it\n\nWrite the change as a short list of operations with their times (for example: cut 0-4.5, zoom 12-18 on the Save button, captions on). Show it to the user and wait for their yes.\n\n## 4. Apply it in one call\n\n`apply_video_edits` with `videoId`, `operations` (each `{ type, ... }`: `cut_range`, `add_zoom`, `set_frame`, `set_background`, `set_aspect_ratio`, `add_captions`, `set_clip_speed`, and the rest its description lists) and `expectedVersion` from `get_timeline`. It is all or nothing, and the operations run in order on the edit the one before left, so after a `cut_range` later times move earlier: put cuts last, or work from the end of the video backwards.\n\n- `invalid_argument`: nothing applied; fix the named operation and retry.\n- `edit_conflict`: the video changed meanwhile (the user may be editing it). Read `get_timeline` again, re-plan, retry.\n\n## 5. Check it\n\n`get_storyboard` again (or `get_video_frame` at the changed moments) and the returned `timeline`. Then give the user `get_live_preview_link` or the video's `viewUrl` and say in a line what changed.\n\n## Rules\n\n- Show the plan before any change. Never change a video the user didn't name.\n- One `apply_video_edits` per plan, not one call per operation.\n- Don't retry after `PRO_REQUIRED` or `forbidden`: only the person who recorded it, or the workspace owner, can edit it.\n"
@@ -26,3 +33,59 @@ export const SKILLS: Record<string, Record<string, string>> = {
 
 /** The record-demo skill's SKILL.md. */
 export const SKILL_TEXT = SKILLS["record-demo"]!["SKILL.md"]!;
+
+const PREFIX = "skill://recordful";
+
+/**
+ * A SKILL.md's frontmatter as JSON.
+ * shortcut: flat one-line `key: value` fields only, as every Recordful skill has; parse real YAML if one needs more.
+ */
+const frontmatterOf = (text: string): Record<string, string> =>
+  Object.fromEntries(
+    (/^---\n([\s\S]*?)\n---\n/.exec(text)?.[1] ?? "")
+      .split("\n")
+      .flatMap((line) => {
+        const field = /^([\w-]+):\s*(.*)$/.exec(line);
+        return field ? [[field[1]!, field[2]!.trim()]] : [];
+      }),
+  );
+
+/** Each skill as a skills/list entry (the io.modelcontextprotocol/skills extension, SEP-2640). */
+export const SKILL_ENTRIES = Object.entries(SKILLS).map(([name, files]) => ({
+  uri: `${PREFIX}/${name}/SKILL.md`,
+  frontmatter: frontmatterOf(files["SKILL.md"] ?? ""),
+  resources: Object.entries(files).map(([file, text]) => ({
+    uri: `${PREFIX}/${name}/${file}`,
+    digest: `sha256:${createHash("sha256").update(text, "utf8").digest("hex")}`,
+    size: Buffer.byteLength(text, "utf8"),
+  })),
+}));
+
+/**
+ * Serves every skill file as a resource at skill://recordful/<name>/<file>,
+ * and the skills extension's skills/list and skills/get. Call before connect.
+ */
+export const registerSkills = (server: McpServer): void => {
+  for (const [name, files] of Object.entries(SKILLS)) {
+    for (const [file, text] of Object.entries(files)) {
+      const uri = `${PREFIX}/${name}/${file}`;
+      const description = file === "SKILL.md" ? frontmatterOf(text).description : `Part of the ${name} skill.`;
+      server.registerResource(`${name}/${file}`, uri, { mimeType: "text/markdown", description }, () => ({
+        contents: [{ uri, mimeType: "text/markdown", text }],
+      }));
+    }
+  }
+  server.server.registerCapabilities({ extensions: { "io.modelcontextprotocol/skills": {} } });
+  server.server.setRequestHandler(
+    z.object({ method: z.literal("skills/list"), params: z.object({ cursor: z.string().optional() }).passthrough().optional() }),
+    () => ({ skills: SKILL_ENTRIES }),
+  );
+  server.server.setRequestHandler(
+    z.object({ method: z.literal("skills/get"), params: z.object({ uri: z.string() }).passthrough() }),
+    ({ params }) => {
+      const skill = SKILL_ENTRIES.find((entry) => entry.uri === params.uri);
+      if (!skill) throw new McpError(ErrorCode.InvalidParams, `No skill at ${params.uri}`);
+      return { skill };
+    },
+  );
+};
