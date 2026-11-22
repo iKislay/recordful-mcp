@@ -83,7 +83,11 @@ export const createRecordfulServer = (deps: RecordfulServerDeps): McpServer => {
 
   const server = new McpServer(
     { name: "recordful", title: "Recordful", version: deps.version },
-    { instructions: copy.instructions },
+    {
+      instructions: copy.instructions,
+      // Adding the hosted tools registers ~110 at once: one list_changed, not one each.
+      debouncedNotificationMethods: ["notifications/tools/list_changed"],
+    },
   );
 
   // Every call waits briefly for the extension: Chrome idles service workers,
