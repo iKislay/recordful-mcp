@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.0 (unreleased)
+
+Your AI app can now edit, organise and share your Recordful videos, not only record them. When you're signed in to Recordful in Chrome, recordful-mcp also offers every tool of the hosted server at recordful.app/mcp (over 100: cuts and clips, silences and filler words, zooms, captions and chapters, look, audio, shapes and blurs, frames and storyboards, search, tags, sharing, analytics, webhooks). Needs Recordful 4.10.0, which carries the calls to recordful.app with its own sign-in; the token never reaches recordful-mcp. Editing tools need Recordful Pro.
+
+- **Hosted tools by proxy.** They are listed with the hosted names, descriptions and schemas and answer exactly as the hosted server does (structured results, typed errors, images). Signed out, offline or with an older Recordful, they simply aren't listed.
+- **Breaking: library tools now come from the hosted server.** `list_videos`, `update_video`, `delete_video`, `list_trash`, `restore_video`, `get_video_activity`, `comment_on_video`, `delete_comment`, `like_video`, `list_folders`, `create_folder`, `move_videos`, `get_analytics`, `list_members` and `invite_member` were copies of the website's API and are gone from this package; the hosted tools of the same names replace them, and they take a `videoId` instead of defaulting to the last recording. The CLI keeps its commands. Recording, page tools, screenshots, `get_video`, `get_transcript`, `get_summary`, `get_storage`, `list_windows`, `list_recordings` and `upload_recording` stay local.
+- **Errors match the hosted server.** A Pro-only tool answers `forbidden` with an upgrade link (`create_checkout_link`), where the docs used to say `PRO_REQUIRED`.
+- **Four new skills:** `edit-video`, `remove-mistakes`, `make-short` and `polish-demo`, beside `record-demo` and `recordful-motion`. Install them with `npx skills add iKislay/recordful-mcp`. Both servers also serve every skill as a `skill://recordful/<name>/SKILL.md` resource (`skills/list`, `skills/get`).
+
 ## 1.3.0 (2026-11-14)
 
 Motion graphics for Recordful videos that don't look generated. Recordful Motion (the web editor in Chrome 157 or later, and desktop 2.2) adds a HyperFrames composition as a motion layer.
