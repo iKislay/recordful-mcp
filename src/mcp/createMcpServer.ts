@@ -8,7 +8,7 @@ import type { BridgeConfig } from "../config.js";
 import { desktopCall } from "../desktop.js";
 import { createRecordfulServer } from "../core/createRecordfulServer.js";
 import type { Logger } from "../logger.js";
-import { SKILLS } from "../skill.js";
+import { registerSkills, SKILLS } from "../skill.js";
 import { localTransport } from "./localTransport.js";
 
 export interface McpServerDeps {
@@ -53,6 +53,8 @@ First connection on a computer:
 
 If you have a browser tool of your own you can use it for the walkthrough instead, but Recordful's page tools make smoother videos.
 "screen" mode always shows Chrome's screen picker, which the user must answer.
+
+Skills: step-by-step guides are resources at skill://recordful/<name>/SKILL.md (record-demo, recordful-motion, and edit-video, remove-mistakes, make-short, polish-demo for the hosted connector's editing tools); skills/list lists them. Read the one that fits before a multi-step task.
 `.trim();
 
 /**
@@ -83,8 +85,8 @@ export const recordFeaturePrompt = (feature: string, url?: string): string => `R
 9. stop_recording. Recordful opens its editor with the video. Tell the user it's ready and summarise what the video shows in one or two sentences.
 10. If the plan is "pro" and the user wants to share it or check what was said: upload_recording (a cloud recording is already uploading), then get_transcript. On any other plan, don't attempt these; say once that shareable links and transcripts come with Recordful Pro.`;
 
-export const createMcpServer = (deps: McpServerDeps): McpServer =>
-  createRecordfulServer({
+export const createMcpServer = (deps: McpServerDeps): McpServer => {
+  const server = createRecordfulServer({
     transport: localTransport(deps.bridge),
     copy: { instructions: INSTRUCTIONS, recordFeaturePrompt, motionGuide },
     timeouts: deps.config,
@@ -92,3 +94,6 @@ export const createMcpServer = (deps: McpServerDeps): McpServer =>
     version: deps.version,
     desktop: desktopCall,
   });
+  registerSkills(server);
+  return server;
+};

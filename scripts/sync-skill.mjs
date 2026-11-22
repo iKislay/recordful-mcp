@@ -25,15 +25,11 @@ for (const name of readdirSync(root).sort()) {
   );
 }
 
-writeFileSync(
-  new URL("../src/skill.ts", import.meta.url),
-  `// The Recordful skills that \`recordful-mcp install\` writes for the AI app,
-// by skill and by file inside it. Generated from skills/ by
-// scripts/sync-skill.mjs; a test keeps them equal.
-export const SKILLS: Record<string, Record<string, string>> = ${JSON.stringify(skills, null, 2)};
-
-/** The record-demo skill's SKILL.md. */
-export const SKILL_TEXT = SKILLS["record-demo"]!["SKILL.md"]!;
-`,
-);
+// Only the SKILLS literal is generated; the rest of src/skill.ts is written by hand.
+const target = new URL("../src/skill.ts", import.meta.url);
+const block = /export const SKILLS: Record<string, Record<string, string>> = [\s\S]*?\n};\n/;
+const source = readFileSync(target, "utf8").replace(/\r\n/g, "\n");
+if (!block.test(source)) throw new Error("src/skill.ts has no SKILLS block to replace");
+const literal = `export const SKILLS: Record<string, Record<string, string>> = ${JSON.stringify(skills, null, 2)};\n`;
+writeFileSync(target, source.replace(block, () => literal));
 console.log(`src/skill.ts updated: ${Object.keys(skills).join(", ")}`);
