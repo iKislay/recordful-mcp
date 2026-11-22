@@ -33,3 +33,5 @@ Add `add_zoom` on the key action if the screen is too small to read at 9:16 (`fo
 
 - Never cut the original: always the copy.
 - One moment per short; offer a second short rather than stitching two.
+
+Tool reference: [library](https://help.recordful.app/docs/ai-agents/tools/library), [editing](https://help.recordful.app/docs/ai-agents/tools/editing), [captions](https://help.recordful.app/docs/ai-agents/tools/captions), [see](https://help.recordful.app/docs/ai-agents/tools/see).

@@ -37,3 +37,5 @@ Write the change as a short list of operations with their times (for example: cu
 - Show the plan before any change. Never change a video the user didn't name.
 - One `apply_video_edits` per plan, not one call per operation.
 - Don't retry after `PRO_REQUIRED` or `forbidden`: only the person who recorded it, or the workspace owner, can edit it.
+
+Tool reference: [editing](https://help.recordful.app/docs/ai-agents/tools/editing), [see](https://help.recordful.app/docs/ai-agents/tools/see), [library](https://help.recordful.app/docs/ai-agents/tools/library).

@@ -35,3 +35,5 @@ Run the edit operations in one `apply_video_edits` with `expectedVersion` from `
 
 - Never overwrite a look or captions the user set without asking.
 - Pick colours from the product being shown, not your defaults.
+
+Tool reference: [zooms](https://help.recordful.app/docs/ai-agents/tools/zooms), [look](https://help.recordful.app/docs/ai-agents/tools/look), [audio](https://help.recordful.app/docs/ai-agents/tools/audio), [captions](https://help.recordful.app/docs/ai-agents/tools/captions).

@@ -36,3 +36,5 @@ On `edit_conflict`, read again and redo the step; on `not_ready`, the transcript
 
 - Never cut meaning: when unsure whether a line is a mistake, ask.
 - Show the cuts before making them. Every cut can be undone in the editor.
+
+Tool reference: [cleanup](https://help.recordful.app/docs/ai-agents/tools/cleanup), [clips](https://help.recordful.app/docs/ai-agents/tools/clips), [captions](https://help.recordful.app/docs/ai-agents/tools/captions).
