@@ -4,7 +4,7 @@ import { silentLogger } from "../src/logger.js";
 import { BridgeError, ErrorCode } from "../src/protocol/errors.js";
 import { CloseCode, MAX_MESSAGE_BYTES } from "../src/protocol/messages.js";
 import { pageExtraWaitMs, parsePageParams } from "../src/protocol/page.js";
-import { connectFakeExtension, memoryPairings, EXTENSION_ID, TOKEN, type FakeExtension } from "./helpers/fakeExtension.js";
+import { connectFakeExtension, memoryPairings, EXTENSION_ID, type FakeExtension } from "./helpers/fakeExtension.js";
 
 const servers: BridgeServer[] = [];
 const clients: FakeExtension[] = [];

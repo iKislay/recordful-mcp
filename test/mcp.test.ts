@@ -5,7 +5,7 @@ import { BridgeServer } from "../src/bridge/BridgeServer.js";
 import { loadConfig } from "../src/config.js";
 import { silentLogger } from "../src/logger.js";
 import { createMcpServer } from "../src/mcp/createMcpServer.js";
-import { connectFakeExtension, memoryPairings, TOKEN, type FakeExtension, type Handler } from "./helpers/fakeExtension.js";
+import { connectFakeExtension, memoryPairings, type FakeExtension, type Handler } from "./helpers/fakeExtension.js";
 
 const cleanups: Array<() => Promise<void> | void> = [];
 afterEach(async () => {
