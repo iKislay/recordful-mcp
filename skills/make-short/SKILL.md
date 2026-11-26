@@ -5,7 +5,7 @@ description: Turn a Recordful video into a vertical short (9:16, captions) for T
 
 # Make a short from a Recordful video
 
-These tools are on Recordful's hosted connector (https://recordful.app/mcp) and need Recordful Pro, write access and a transcript (if `get_transcript` says `status: "none"`, ask the user to transcribe it on its page on recordful.app).
+These tools are on Recordful's hosted connector (https://recordful.app/mcp) and need Recordful Pro, write access and a transcript (if `get_transcript` says `status: "none"`, start one with `transcribe_video`).
 
 ## 1. Copy, don't overwrite
 

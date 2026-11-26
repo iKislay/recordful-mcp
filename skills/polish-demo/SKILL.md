@@ -5,7 +5,7 @@ description: Polish a Recordful screen recording into a finished product demo - 
 
 # Polish a demo on Recordful
 
-These tools are on Recordful's hosted connector (https://recordful.app/mcp) and need Recordful Pro and write access. Captions and chapters also need a transcript (ask the user to transcribe the video on its page if `get_transcript` says `status: "none"`).
+These tools are on Recordful's hosted connector (https://recordful.app/mcp) and need Recordful Pro and write access. Captions and chapters also need a transcript (start one with `transcribe_video` if `get_transcript` says `status: "none"`).
 
 ## 1. See what it has
 

@@ -5,7 +5,7 @@ description: Clean the mistakes out of a Recordful video - retakes, false starts
 
 # Remove mistakes from a Recordful video
 
-These tools are on Recordful's hosted connector (https://recordful.app/mcp) and need Recordful Pro, write access and a transcript. If `get_transcript` says `status: "none"`, ask the user to transcribe the video on its page on recordful.app; the connector never starts one.
+These tools are on Recordful's hosted connector (https://recordful.app/mcp) and need Recordful Pro, write access and a transcript. If `get_transcript` says `status: "none"`, start one with `transcribe_video` (it spends AI credits, about 4 a minute) and call `get_transcript` again in a minute.
 
 ## 1. Read what was said
 
