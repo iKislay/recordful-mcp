@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.1 (2026-11-27)
+
+- **Skills start a missing transcript.** `remove-mistakes`, `make-short` and `polish-demo` now call the hosted `transcribe_video` tool (it spends AI credits, about 4 a minute) when a video has no transcript, instead of asking you to make one in the editor.
+
 ## 2.0.0 (2026-11-23)
 
 Your AI app can now edit, organise and share your Recordful videos, not only record them. When you're signed in to Recordful in Chrome, recordful-mcp also offers every tool of the hosted server at recordful.app/mcp (over 100: cuts and clips, silences and filler words, zooms, captions and chapters, look, audio, shapes and blurs, frames and storyboards, search, tags, sharing, analytics, webhooks). Needs Recordful 4.10.0 (in the Chrome Web Store once it passes review), which carries the calls to recordful.app with its own sign-in; the token never reaches recordful-mcp. Editing tools need Recordful Pro.
