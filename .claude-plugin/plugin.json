@@ -1,6 +1,6 @@
 {
   "name": "recordful",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Record product demos in Chrome with Recordful and edit, organise and share them: the recordful MCP server (with the hosted editing tools when signed in), six skills (record-demo, recordful-motion, edit-video, remove-mistakes, make-short, polish-demo) and a /record-demo command.",
   "author": {
     "name": "Kislay",
